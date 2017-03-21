@@ -138,6 +138,29 @@ app.get('/Logout', function (req, res) {
     });
 });
 
+function isLogin(userId, token, callback) {
+    var checkTokenQuery = "Select id from employee where id=" + userId + " and authentoken='" + token + "'";
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    connection.query(checkTokenQuery, function (error, rows) {
+        if (error) {
+            callback(error, false);
+        }
+        else {
+            if (typeof rows !== 'undefined' && rows.length > 0) {
+                callback(false, true);
+            }
+            else {
+                callback(false, false);
+            }
+        }
+    });
+}
+
 app.post('/ChangePassword', function (req, res) {
     var json = req.body;
     var email = json.email;
@@ -180,15 +203,15 @@ app.post('/GetProductList', function (req, res) {
             }
             else {
                 connection.query(queryGetProductList, function (error, rows) {
-                   connection.end(); 
-                   
+                    connection.end();
+
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
                         if (typeof rows !== 'undefined' && rows.length > 0) {
                             console.log(rows);
-                            res.send(JSON.stringify({ status: 1, data: rows[0]}));
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
                         }
                         else {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
@@ -232,29 +255,6 @@ app.post('/GetProductById', function (req, res) {
 
     });
 });
-
-function isLogin(userId, token, callback) {
-    var checkTokenQuery = "Select id from employee where id=" + userId + " and authentoken='" + token + "'";
-    let connection = mysql.createConnection({
-        host: 'localhost',
-        user: 'root',
-        password: 'Password@1',
-        database: 'factory'
-    });
-    connection.query(checkTokenQuery, function (error, rows) {
-        if (error) {
-            callback(error, false);
-        }
-        else {
-            if (typeof rows !== 'undefined' && rows.length > 0) {
-                callback(false, true);
-            }
-            else {
-                callback(false, false);
-            }
-        }
-    });
-}
 
 app.post('/AddNewProduct', function (req, res) {
     var json = req.body;
@@ -307,4 +307,67 @@ app.post('/AddNewProduct', function (req, res) {
             }
         }
     });
+});
+
+app.post('/UpdateProduct', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var productId = json.productId;
+    var productImg = json.productImg;
+    var productName = json.productName;
+    var productCost = json.productCost;
+    var productTypeId = json.productTypeId;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "update product (Name,\
+                                        ProductTypeId,\
+                                        Cost,\
+                                        EmployeeId,\
+                                        ImageUrl,\
+                                        InsertedDate) \
+                                        values('" + productName + "', " + productTypeId + "," + productCost + "," + userId + ",'" + productImg + "', NOW())\
+                                        where productId = " + productId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            console.log(error);
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            var selectQuery = "select * from product where id = " + rows['insertId'];
+                            connection.query(selectQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+app.post('/SearchProduct', function (req, res) {
+
 });
