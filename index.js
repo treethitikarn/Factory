@@ -210,7 +210,6 @@ app.post('/GetProductList', function (req, res) {
                     }
                     else {
                         if (typeof rows !== 'undefined' && rows.length > 0) {
-                            console.log(rows);
                             res.send(JSON.stringify({ status: 1, data: rows[0] }));
                         }
                         else {
@@ -288,7 +287,6 @@ app.post('/AddNewProduct', function (req, res) {
                                         values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ",'" + productImg + "', NOW());";
                 connection.query(query, function (error, rows) {
                     if (error) {
-                        console.log(error);
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
@@ -333,21 +331,20 @@ app.post('/UpdateProduct', function (req, res) {
                         password: 'Password@1',
                         database: 'factory'
                     });
-                    var query = "update product (Name,\
-                                        ProductTypeId,\
-                                        Cost,\
-                                        EmployeeId,\
-                                        ImageUrl,\
-                                        InsertedDate) \
-                                        values('" + productName + "', " + productTypeId + "," + productCost + "," + userId + ",'" + productImg + "', NOW())\
-                                        where productId = " + productId;
+                    var query = "update product set \
+                                        Name = '" + productName + "',\
+                                        ProductTypeId = " + productTypeId + ",\
+                                        Cost = " + productCost + ",\
+                                        EmployeeId = " + userId + ",\
+                                        ImageUrl = '" + productImg + "',\
+                                        InsertedDate = NOW() \
+                                        where id = " + productId;
                     connection.query(query, function (error, rows) {
                         if (error) {
-                            console.log(error);
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
-                            var selectQuery = "select * from product where id = " + rows['insertId'];
+                            var selectQuery = "select * from product where id = " + productId;
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
                                 if (error) {
@@ -369,5 +366,78 @@ app.post('/UpdateProduct', function (req, res) {
 });
 
 app.post('/SearchProduct', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var productId = json.productId;
+    var productName = json.productName;
+    var productTypeId = json.productTypeId;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "select *\
+                from product\
+                where (('" + productId + "' is null or '" + productId + "' = '') or id = '" + productId + "')\
+                and (('" + productName + "' is null or '" + productName + "' = '') or name = '" + productName + "')\
+                and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or producttypeid = '" + productTypeId + "')";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
 
+app.post('/DeleteProduct', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var productId = json.productId;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "delete from product where id = " + productId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 1 }));
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
 });
