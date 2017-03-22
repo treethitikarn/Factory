@@ -609,7 +609,7 @@ app.post('/UpdateProductType', function (req, res) {
     }
 });
 
-app.post('/DeleteProduct', function (req, res) {
+app.post('/DeleteProductType', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var isAdmin = json.isAdmin;
@@ -630,6 +630,258 @@ app.post('/DeleteProduct', function (req, res) {
                         database: 'factory'
                     });
                     var query = "delete from producttype where id = " + productTypeId + "; update product set producttypeid = 1 where producttypeid = " + productTypeId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 1 }));
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+app.post('/GetMaterialList', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                var query = "select * from material where id <> 1";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/GetMaterialById', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var materialId = json.materialId;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) {
+            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        }
+        else {
+            if (ans) {
+                connection.query('Select * from material where id=' + materialId, function (error, rows) {
+                    connection.end();
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+            else {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+        }
+
+    });
+});
+
+app.post('/AddNewMaterial', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var materialName = json.materialName;
+    var materialTypeId = json.materialTypeId;
+    var materialAmount = json.materialAmount;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "Insert into material (Name,\
+                                        MaterialTypeId,\
+                                        Amount,\
+                                        EmployeeId,\
+                                        InsertedDate) \
+                                        values('" + materialName + "', " + materialTypeId + "," + materialAmount + "," + userId + ", NOW());";
+                connection.query(query, function (error, rows) {
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        var selectQuery = "select * from material where id = " + rows['insertId'];
+                        connection.query(selectQuery, function (error, valueRow) {
+                            connection.end();
+                            if (error) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                            }
+                            else {
+                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/UpdateMaterial', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var materialId = json.materialId;
+    var materialName = json.materialName;
+    var materialTypeId = json.materialTypeId;
+    var materialAmount = json.materialAmount;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "update material set \
+                                        Name = '" + productName + "',\
+                                        materialtypeid = " + materialTypeId + ",\
+                                        amount = " + materialAmount + ",\
+                                        EmployeeId = " + userId + ",\
+                                        InsertedDate = NOW() \
+                                        where id = " + materialId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            var selectQuery = "select * from material where id = " + materialId;
+                            connection.query(selectQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+app.post('/SearchMaterial', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var materialId = json.materialId;
+    var materialName = json.materialName;
+    var materialTypeId = json.materialTypeId;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "select *\
+                from material\
+                where (('" + materialId + "' is null or '" + materialId + "' = '') or id = '" + materialId + "')\
+                and (('" + materialName + "' is null or '" + materialName + "' = '') or name = '" + materialName + "')\
+                and (('" + materialTypeId + "' is null or '" + materialTypeId + "' = '') or materialTypeId = '" + materialTypeId + "')";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/DeleteMaterial', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var materialId = json.materialId;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "delete from material where id = " + materialId;
                     connection.query(query, function (error, rows) {
                         if (error) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
