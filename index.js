@@ -23,29 +23,77 @@ app.listen(port, function () {
     console.log('Starting node.js on port ' + port);
 });
 
-app.get('/GetRegion', function (req, res) {
+app.post('/GetRegionList', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
     let connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
         database: 'factory'
     });
-    connection.connect(function (err) {
-        if (err) {
-            console.log('Error connecting to Db');
-            return;
-        }
-        console.log('Connection established');
-        connection.query('SELECT * FROM region', function (err, rows) {
-            connection.end();
-            if (err) throw err;
-
-            console.log('Data received from Db:\n');
-            for (var i = 0; i < rows.length; i++) {
-                console.log(rows[i].name);
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
+            else {
+                connection.query("select * from region", function (error, rows) {
+                    connection.end();
 
-        });
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/GetMaterialTypeList', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                connection.query("select * from materialtype", function (error, rows) {
+                    connection.end();
+
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                        }
+                    }
+                });
+            }
+        }
     });
 });
 
@@ -882,6 +930,285 @@ app.post('/DeleteMaterial', function (req, res) {
                         database: 'factory'
                     });
                     var query = "delete from material where id = " + materialId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 1 }));
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+app.post('/GetCustomerList', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                var query = "select * from customer where";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/GetCustomerById', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerId = json.customerId;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) {
+            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        }
+        else {
+            if (ans) {
+                connection.query('Select * from customer where id=' + customerId, function (error, rows) {
+                    connection.end();
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+            else {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+        }
+
+    });
+});
+
+app.post('/AddNewCustomer', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerName = json.customerName;
+    var regionId = json.regionId;
+    var address = json.address;
+    var subdistrict = json.subdistrict;
+    var district = json.district;
+    var province = json.province;
+    var postcode = json.postcode;
+    var phone = json.phone;
+    var transporter = json.transporter;
+    var transporterPhone = json.transporterPhone;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "Insert into customer (Name,\
+                                        address,\
+                                        subdistrict,\
+                                        district,\
+                                        province,\
+                                        postcode,\
+                                        regionid,\
+                                        phone,\
+                                        transporter,\
+                                        transporterphone,\
+                                        InsertedDate) \
+                                        values('" + customerName + "', '" + address + "','" + subdistrict + "','" + 
+                                        district + "','" + province + "','" + postcode + "','" + regionId + "','" + 
+                                        phone + "','" + transporter + "','" + transporterPhone + "', NOW());";
+                connection.query(query, function (error, rows) {
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        var selectQuery = "select * from customer where id = " + rows['insertId'];
+                        connection.query(selectQuery, function (error, valueRow) {
+                            connection.end();
+                            if (error) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                            }
+                            else {
+                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/UpdateCustomer', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var customerId = json.customerId;
+    var customerName = json.customerName;
+    var regionId = json.regionId;
+    var address = json.address;
+    var subdistrict = json.subdistrict;
+    var district = json.district;
+    var province = json.province;
+    var postcode = json.postcode;
+    var phone = json.phone;
+    var transporter = json.transporter;
+    var transporterPhone = json.transporterPhone;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "update customer set \
+                                        Name = '" + customerName + "',\
+                                        address = '" + address + "',\
+                                        subdistrict = '" + subdistrict + "',\
+                                        district = '" + district + "',\
+                                        province = '" + province + "',\
+                                        postcode = '" + postcode + "',\
+                                        regionid = " + regionid + ",\
+                                        phone = '" + phone + "',\
+                                        transporter = '" + transporter + "',\
+                                        transporterphone = '" + transporterphone + "',\
+                                        InsertedDate = NOW() \
+                                        where id = " + customerId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            var selectQuery = "select * from customer where id = " + customerId;
+                            connection.query(selectQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+app.post('/SearchCustomer', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerId = json.customerId;
+    var customerName = json.customerName;
+    var regionId = json.regionId;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "select *\
+                from customer\
+                where (('" + customerId + "' is null or '" + customerId + "' = '') or id = '" + customerId + "')\
+                and (('" + customerName + "' is null or '" + customerName + "' = '') or name = '" + customerName + "')\
+                and (('" + regionId + "' is null or '" + regionId + "' = '') or regionId = '" + regionId + "')";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/DeleteCustomer', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var customerId = json.customerId;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "delete from customer where id = " + customerId;
                     connection.query(query, function (error, rows) {
                         if (error) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
