@@ -413,6 +413,114 @@ app.post('/UpdateProduct', function (req, res) {
     }
 });
 
+app.post('/AddProductAmount', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var productId = json.productId;
+    var amount = json.amount;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) {
+            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        }
+        else {
+            if (ans) {
+                var getProductAmount;
+                connection.query('insert into producttransaction (amount, employeeid, transactionDate) values(' + amount + ', ' + userId + ', NOW()); update product set amount = (amount + ' + amount + ') where id = ' + productId, function (error, rows) {
+                    connection.end();
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    else {
+                        res.send(JSON.stringify({ status: 1 }));
+                    }
+                });
+            }
+            else {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+        }
+
+    });
+});
+
+app.post('/GetProductTransactionList', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                var query = 'select * from producttransaction order by transactiondate';
+                connection.query(query, function (error, rows) {
+                    connection.end();
+
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/SearchProductTransaction', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var transactionDate = json.transactionDate;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "select *\
+                from producttransaction\
+                where transactiondate = " + transactionDate;
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
+
 app.post('/SearchProduct', function (req, res) {
     var json = req.body;
     var userId = json.userId;
@@ -1055,9 +1163,9 @@ app.post('/AddNewCustomer', function (req, res) {
                                         transporter,\
                                         transporterphone,\
                                         InsertedDate) \
-                                        values('" + customerName + "', '" + address + "','" + subdistrict + "','" + 
-                                        district + "','" + province + "','" + postcode + "','" + regionId + "','" + 
-                                        phone + "','" + transporter + "','" + transporterPhone + "', NOW());";
+                                        values('" + customerName + "', '" + address + "','" + subdistrict + "','" +
+                    district + "','" + province + "','" + postcode + "','" + regionId + "','" +
+                    phone + "','" + transporter + "','" + transporterPhone + "', NOW());";
                 connection.query(query, function (error, rows) {
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
@@ -1225,3 +1333,508 @@ app.post('/DeleteCustomer', function (req, res) {
         res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
     }
 });
+
+app.post('/AddNewMaterialTransaction', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var materialId = json.materialId;
+    var acquire = json.acquire;
+    var use = join.use;
+    var balance = join.balance; // do i really need?
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var insertQuery = "Insert into materialtransaction (materialId,\
+                                        acquire,\
+                                        `use`,\
+                                        balance,\
+                                        `datetime`,\
+                                        employeeid) \
+                                        values(" + materialId + ", " + acquire + ", " + use +
+                    ", (select amount from material where id = " + materialId + " limit 1) - " + use + " + " + acquire + ", NOW(), " + userId + ");";
+                connection.query(query, function (error, rows) {
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1 }));
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/GetMaterialTransactionList', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                var query = 'select * from materialtransaction';
+                connection.query(query, function (error, rows) {
+                    connection.end();
+
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/SearchMaterialTransaction', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var transactionDate = json.transactionDate;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "select *\
+                from materialtransaction\
+                where `datetime` = " + transactionDate;
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/GetOrderList', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                var query = "select * from `order`";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/GetOrderById', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var orderId = json.orderId;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) {
+            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        }
+        else {
+            if (ans) {
+                connection.query('Select * from `order` as o join orderdetails od on o.id = od.orderid where id=' + orderId, function (error, rows) {
+                    connection.end();
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+            else {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+        }
+
+    });
+});
+
+app.post('/AddNewOrder', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerId = json.customerId;
+    var purchaseList = json.purchaseList;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "Insert into `order` (customerId,\
+                                        employeeId,\
+                                        `datetime`) \
+                                        values(" + customerId + ", " + userId + ", NOW());";
+                connection.query(query, function (error, rows) {
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        var insertQuery;
+                        for (var i = 0; i < purchaseList.length; i++) {
+                            var productId = purchaseList[i].productId;
+                            var amount = purchaseList[i].amount;
+                            var priceperpiece = purchaseList[i].priceperpiece
+                            insertQuery += "insert into orderdetails (orderid, productid, amount, priceperpiece, employeeid, `datetime`) \
+                                            values(" + rows['insertId'] + ", " + productId + ", " + amount + ", " + priceperpiece + ", " + userId + ", NOW());";
+                        }
+                        connection.query(insertQuery, function (error, valueRow) {
+                            connection.end();
+                            if (error) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot add new purchase to order.' }));
+                            }
+                            else {
+                                res.send(JSON.stringify({ status: 1 }));
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/EditOrder', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var orderId = json.orderId;
+    var customerId = json.customerId;
+    var purchaseList = json.purchaseList;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "update `order` set \
+                                        customerId = '" + productName + "',\
+                                        isupdated = 1\
+                                        where id = " + orderId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            var updateQuery;
+                            for (var i = 0; i < purchaseList.length; i++) {
+                                var orderDetailId = purchaseList[i].orderDetailId;
+                                var productId = purchaseList[i].productId;
+                                var priceperpiece = purchaseList[i].priceperpiece;
+                                var amount = purchaseList[i].amount;
+                                updateQuery += "update orderdetails productid = " + productId + ",\
+                                                                    amount = " + amount + ", \
+                                                                    priceperpiece = " + priceperpiece + ",\
+                                                                    isupdated = 1 \
+                                                where id = " + orderDetailId + ";";
+                            }
+                            connection.query(updateQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update purchase in order.' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+app.post('/DeleteOrder', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var orderId = json.orderId;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "delete from `order` where id = " + orderId + "; delete from orderdetails where orderid = " + orderId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 1 }));
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+app.post('/SearchOrder', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var orderId = json.orderId;
+    var customerName = json.customerName;
+    var region = json.region;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "select * \
+                from `order` o join orderdetails od on o.id = od.orderid \
+                join customer c on o.customerid = c.id \
+                join region r on c.regionid = r.id \
+                where (('" + orderId + "' is null or '" + orderId + "' = '') or o.id = '" + orderId + "')\
+                and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name = '" + customerName + "')\
+                and (('" + region + "' is null or '" + region + "' = '') or r.name = '" + region + "')";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/AddNewPurchase', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerId = json.customerId;
+    var orderId = json.orderId;
+    var priceperpiece = json.priceperpiece;
+    var amount = json.amount;
+    var productId = json.productId;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "Insert into `orderdetails` (customerId,\
+                                        orderid,\
+                                        priceperpiece,\
+                                        amount,\
+                                        employeeid,\
+                                        productid,\
+                                        `datetime`) \
+                                        values(" + customerId + ", " + orderId + ", " +
+                    priceperpiece + ", " + amount + ", " +
+                    userId + ", " + productId + ", NOW());";
+                connection.query(query, function (error, rows) {
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1 }));
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/EditPurchase', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var priceperpiece = json.priceperpiece;
+    var amount = json.amount;
+    var orderdetailsId = json.orderdetailsId;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "update orderdetails priceperpiece = " + priceperpiece + ", amount = " + amount + " where id = " + orderdetailsId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 1 }));
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+app.post('/DeletePurchase', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var isAdmin = json.isAdmin;
+    var token = json.token;
+    var orderdetailsId = json.orderdetailsId;
+    if (isAdmin == 1) {
+        isLogin(userId, token, function (error, ans) {
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            else {
+                if (!ans) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "delete from orderdetails where id = " + orderdetialsId;
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 1 }));
+                        }
+                    });
+                }
+            }
+        });
+    }
+    else {
+        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+    }
+});
+
+
