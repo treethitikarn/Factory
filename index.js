@@ -448,79 +448,6 @@ app.post('/AddProductAmount', function (req, res) {
     });
 });
 
-app.post('/GetProductTransactionList', function (req, res) {
-    var json = req.body;
-    var userId = json.userId;
-    var token = json.token;
-    let connection = mysql.createConnection({
-        host: 'localhost',
-        user: 'root',
-        password: 'Password@1',
-        database: 'factory'
-    });
-    isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
-        else {
-            if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
-            }
-            else {
-                var query = 'select * from producttransaction order by transactiondate';
-                connection.query(query, function (error, rows) {
-                    connection.end();
-
-                    if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
-                    }
-                    else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
-                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
-                        }
-                        else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
-                        }
-                    }
-                });
-            }
-        }
-    });
-});
-
-app.post('/SearchProductTransaction', function (req, res) {
-    var json = req.body;
-    var userId = json.userId;
-    var token = json.token;
-    var transactionDate = json.transactionDate;
-    isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
-        else {
-            if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
-            }
-            else {
-                let connection = mysql.createConnection({
-                    host: 'localhost',
-                    user: 'root',
-                    password: 'Password@1',
-                    database: 'factory'
-                });
-                var query = "select *\
-                from producttransaction\
-                where transactiondate = " + transactionDate;
-                connection.query(query, function (error, rows) {
-                    connection.end();
-                    if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
-                    }
-                    else {
-                        res.send(JSON.stringify({ status: 1, data: rows }));
-                    }
-                });
-            }
-        }
-    });
-});
-
 app.post('/SearchProduct', function (req, res) {
     var json = req.body;
     var userId = json.userId;
@@ -687,9 +614,9 @@ app.post('/AddNewProductType', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "Insert into productTypeId (Name,\
+                var query = "Insert into productType (Name,\
                                         EmployeeId,\
-                                        InsertedDate) \
+                                        `datetime`) \
                                         values('" + productTypeName + "'," + userId + ", NOW());";
                 connection.query(query, function (error, rows) {
                     if (error) {
@@ -737,7 +664,7 @@ app.post('/UpdateProductType', function (req, res) {
                     var query = "update producttype set \
                                         Name = '" + productTypeName + "',\
                                         EmployeeId = " + userId + ",\
-                                        InsertedDate = NOW() \
+                                        `datetime` = NOW() \
                                         where id = " + productTypeId;
                     connection.query(query, function (error, rows) {
                         if (error) {
@@ -765,12 +692,13 @@ app.post('/UpdateProductType', function (req, res) {
     }
 });
 
+// เจ๊ง
 app.post('/DeleteProductType', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var isAdmin = json.isAdmin;
     var token = json.token;
-    var productTypeId = json.productId;
+    var productTypeId = json.productTypeId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
             if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
@@ -785,8 +713,9 @@ app.post('/DeleteProductType', function (req, res) {
                         password: 'Password@1',
                         database: 'factory'
                     });
-                    var query = "delete from producttype where id = " + productTypeId + "; update product set producttypeid = 1 where producttypeid = " + productTypeId;
+                    var query = "delete from producttype where id = " + productTypeId + "; update product set producttypeid = 1 where producttypeid = " + productTypeId + ";";
                     connection.query(query, function (error, rows) {
+                        console.log(query);
                         if (error) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
@@ -823,7 +752,7 @@ app.post('/GetMaterialList', function (req, res) {
                 var query = "select * from material where id <> 1";
                 connection.query(query, function (error, rows) {
                     connection.end();
-
+                    console.log(query);
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -898,7 +827,7 @@ app.post('/AddNewMaterial', function (req, res) {
                                         MaterialTypeId,\
                                         Amount,\
                                         EmployeeId,\
-                                        InsertedDate) \
+                                        `datetime`) \
                                         values('" + materialName + "', " + materialTypeId + "," + materialAmount + "," + userId + ", NOW());";
                 connection.query(query, function (error, rows) {
                     if (error) {
@@ -946,11 +875,11 @@ app.post('/UpdateMaterial', function (req, res) {
                         database: 'factory'
                     });
                     var query = "update material set \
-                                        Name = '" + productName + "',\
+                                        Name = '" + materialName + "',\
                                         materialtypeid = " + materialTypeId + ",\
                                         amount = " + materialAmount + ",\
                                         EmployeeId = " + userId + ",\
-                                        InsertedDate = NOW() \
+                                        `datetime` = NOW() \
                                         where id = " + materialId;
                     connection.query(query, function (error, rows) {
                         if (error) {
@@ -978,6 +907,7 @@ app.post('/UpdateMaterial', function (req, res) {
     }
 });
 
+// not yet
 app.post('/SearchMaterial', function (req, res) {
     var json = req.body;
     var userId = json.userId;
@@ -1837,4 +1767,76 @@ app.post('/DeletePurchase', function (req, res) {
     }
 });
 
+app.post('/GetProductTransactionList', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                var query = 'select * from producttransaction order by transactiondate';
+                connection.query(query, function (error, rows) {
+                    connection.end();
+
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                            res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/SearchProductTransaction', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var transactionDate = json.transactionDate;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "select *\
+                from producttransaction\
+                where transactiondate = " + transactionDate;
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
 
