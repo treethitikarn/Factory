@@ -47,7 +47,7 @@ app.post('/GetRegionList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -84,7 +84,7 @@ app.post('/GetMaterialTypeList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -257,7 +257,7 @@ app.post('/GetProductList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -556,7 +556,7 @@ app.post('/GetProductTypeList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -768,7 +768,7 @@ app.post('/GetMaterialList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -1019,7 +1019,7 @@ app.post('/GetCustomerList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -1300,7 +1300,7 @@ app.post('/GetOrderList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -1748,7 +1748,7 @@ app.post('/GetMaterialTransactionList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -1821,7 +1821,7 @@ app.post('/GetProductTransactionList', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (typeof rows !== 'undefined' && rows.length > 0) {
+                        if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
