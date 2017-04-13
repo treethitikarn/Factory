@@ -154,7 +154,7 @@ app.post('/Login', function (req, res) {
                 connection.query(updateAuthenToken, function (error, ans) {
                     connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }));
-                    else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin }));
+                    else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id}));
                 });
             }
             else {
