@@ -3,6 +3,8 @@ var mysql = require('mysql');
 var bodyParser = require('body-parser');
 var bcrypt = require('bcrypt-nodejs');
 var upload = require('express-fileupload');
+var path = require('path');
+var fs = require('fs');
 var uploadFolder = "./upload/";
 
 var queryGetProductList = 'SELECT * from product order by id';
@@ -45,25 +47,27 @@ app.listen(port, function () {
     console.log('Starting node.js on port ' + port);
 });
 app.post('/uploadFile', function (req, res) {
-    console.log(req.body.word);
-    if (req.files) {
-        var file = req.files.uploadfile,
-            filename = file.name;
+    // var filePath = oldImageUrl;
+    fs.unlinkSync(uploadFolder + '/17522766_1402551283134361_7776908201199112813_n.jpg');
+    // if (req.files) {
+    //     var file = req.files.uploadfile,
+    //         filename = file.name;
+    //     var ext = path.extname(filename);
 
-        file.mv("./upload/" + filename, function (err) {
-            if (err) {
-                console.log(err);
-                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
-            }
-            else {
-                console.log('Done!');
-                res.send(JSON.stringify({ status: 1 }));
-            }
-        })
-    }
-    else {
-        console.log('wrong');
-    }
+    //     file.mv("./upload/1" + ext, function (err) {
+    //         if (err) {
+    //             console.log(err);
+    //             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
+    //         }
+    //         else {
+    //             console.log('Done!');
+    //             res.send(JSON.stringify({ status: 1 }));
+    //         }
+    //     })
+    // }
+    // else {
+    //     console.log('wrong');
+    // }
 });
 app.post('/GetRegionList', function (req, res) {
     var json = req.body;
@@ -440,6 +444,18 @@ app.post('/UpdateProduct', function (req, res) {
                                     password: 'Password@1',
                                     database: 'factory'
                                 });
+                                var getImageUrlQuery = 'select ImageUrl from product where id = ' + productId;
+                                var oldImageUrl = "";
+                                connection.query(getImageUrlQuery, function (error, rows) {
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                    }
+                                    else {
+                                        oldImageUrl = rows[0].ImageUrl;
+                                        var filePath = oldImageUrl;
+                                        fs.unlinkSync(filePath);
+                                    }
+                                });
                                 var query = "update product set \
                                         Name = '" + productName + "',\
                                         ProductTypeId = " + productTypeId + ",\
@@ -576,6 +592,18 @@ app.post('/DeleteProduct', function (req, res) {
                         user: 'root',
                         password: 'Password@1',
                         database: 'factory'
+                    });
+                    var getImageUrlQuery = 'select ImageUrl from product where id = ' + productId;
+                    var oldImageUrl = "";
+                    connection.query(getImageUrlQuery, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            oldImageUrl = rows[0].ImageUrl;
+                            var filePath = oldImageUrl;
+                            fs.unlinkSync(filePath);
+                        }
                     });
                     var query = "delete from product where id = " + productId;
                     connection.query(query, function (error, rows) {
