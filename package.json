@@ -12,6 +12,9 @@
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.17.1",
     "express": "^4.15.2",
-    "mysql": "^2.13.0"
+    "express-fileupload": "^0.1.2",
+    "fs": "0.0.1-security",
+    "mysql": "^2.13.0",
+    "path": "^0.12.7"
   }
 }

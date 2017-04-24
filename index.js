@@ -2,6 +2,10 @@ var app = require('express')();
 var mysql = require('mysql');
 var bodyParser = require('body-parser');
 var bcrypt = require('bcrypt-nodejs');
+var upload = require('express-fileupload');
+var path = require('path');
+var fs = require('fs');
+var uploadFolder = "./upload/";
 
 var queryGetProductList = 'SELECT * from product order by id';
 var queryGetProductById = 'Select * from product where id={0}';
@@ -11,6 +15,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(upload());
 // Add headers
 app.use(function (req, res, next) {
 
@@ -41,7 +46,29 @@ app.get('/index', function (req, res) {
 app.listen(port, function () {
     console.log('Starting node.js on port ' + port);
 });
+app.post('/uploadFile', function (req, res) {
+    // var filePath = oldImageUrl;
+    fs.unlinkSync(uploadFolder + '/17522766_1402551283134361_7776908201199112813_n.jpg');
+    // if (req.files) {
+    //     var file = req.files.uploadfile,
+    //         filename = file.name;
+    //     var ext = path.extname(filename);
 
+    //     file.mv("./upload/1" + ext, function (err) {
+    //         if (err) {
+    //             console.log(err);
+    //             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
+    //         }
+    //         else {
+    //             console.log('Done!');
+    //             res.send(JSON.stringify({ status: 1 }));
+    //         }
+    //     })
+    // }
+    // else {
+    //     console.log('wrong');
+    // }
+});
 app.post('/GetRegionList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
@@ -173,7 +200,7 @@ app.post('/Login', function (req, res) {
                 connection.query(updateAuthenToken, function (error, ans) {
                     connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }));
-                    else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id}));
+                    else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id }));
                 });
             }
             else {
@@ -326,7 +353,6 @@ app.post('/AddNewProduct', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    var productImg = json.productImg;
     var productName = json.productName;
     var productCost = json.productCost;
     var productTypeId = json.productTypeId;
@@ -338,37 +364,49 @@ app.post('/AddNewProduct', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
             else {
-                let connection = mysql.createConnection({
-                    host: 'localhost',
-                    user: 'root',
-                    password: 'Password@1',
-                    database: 'factory'
-                });
-                var query = "Insert into product (Name,\
+                if (req.files) {
+                    var file = req.files.uploadfile,
+                        filename = file.name;
+                    file.mv(uploadFolder + filename, function (err) {
+                        if (err) {
+                            console.log(err);
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
+                        }
+                        else {
+                            let connection = mysql.createConnection({
+                                host: 'localhost',
+                                user: 'root',
+                                password: 'Password@1',
+                                database: 'factory'
+                            });
+                            var query = "Insert into product (Name,\
                                         ProductTypeId,\
                                         Amount,\
                                         Cost,\
                                         EmployeeId,\
                                         ImageUrl,\
                                         InsertedDate) \
-                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ",'" + productImg + "', NOW());";
-                connection.query(query, function (error, rows) {
-                    if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
-                    }
-                    else {
-                        var selectQuery = "select * from product where id = " + rows['insertId'];
-                        connection.query(selectQuery, function (error, valueRow) {
-                            connection.end();
-                            if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
-                            }
-                            else {
-                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                            }
-                        });
-                    }
-                });
+                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ",'" + uploadFolder + filename + "', NOW());";
+                            connection.query(query, function (error, rows) {
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                }
+                                else {
+                                    var selectQuery = "select * from product where id = " + rows['insertId'];
+                                    connection.query(selectQuery, function (error, valueRow) {
+                                        connection.end();
+                                        if (error) {
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                        }
+                                        else {
+                                            res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    })
+                }
             }
         }
     });
@@ -380,7 +418,6 @@ app.post('/UpdateProduct', function (req, res) {
     var isAdmin = json.isAdmin;
     var token = json.token;
     var productId = json.productId;
-    var productImg = json.productImg;
     var productName = json.productName;
     var productCost = json.productCost;
     var productTypeId = json.productTypeId;
@@ -392,37 +429,61 @@ app.post('/UpdateProduct', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
-                        host: 'localhost',
-                        user: 'root',
-                        password: 'Password@1',
-                        database: 'factory'
-                    });
-                    var query = "update product set \
+                    if (req.files) {
+                        var file = req.files.uploadfile,
+                            filename = file.name;
+                        file.mv(uploadFolder + filename, function (err) {
+                            if (err) {
+                                console.log(err);
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
+                            }
+                            else {
+                                let connection = mysql.createConnection({
+                                    host: 'localhost',
+                                    user: 'root',
+                                    password: 'Password@1',
+                                    database: 'factory'
+                                });
+                                var getImageUrlQuery = 'select ImageUrl from product where id = ' + productId;
+                                var oldImageUrl = "";
+                                connection.query(getImageUrlQuery, function (error, rows) {
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                    }
+                                    else {
+                                        oldImageUrl = rows[0].ImageUrl;
+                                        var filePath = oldImageUrl;
+                                        fs.unlinkSync(filePath);
+                                    }
+                                });
+                                var query = "update product set \
                                         Name = '" + productName + "',\
                                         ProductTypeId = " + productTypeId + ",\
                                         Cost = " + productCost + ",\
                                         EmployeeId = " + userId + ",\
-                                        ImageUrl = '" + productImg + "',\
+                                        ImageUrl = '" + uploadFolder + filename + "',\
                                         InsertedDate = NOW() \
                                         where id = " + productId;
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
-                        }
-                        else {
-                            var selectQuery = "select * from product where id = " + productId;
-                            connection.query(selectQuery, function (error, valueRow) {
-                                connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                }
-                            });
-                        }
-                    });
+                                connection.query(query, function (error, rows) {
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                    }
+                                    else {
+                                        var selectQuery = "select * from product where id = " + productId;
+                                        connection.query(selectQuery, function (error, valueRow) {
+                                            connection.end();
+                                            if (error) {
+                                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                            }
+                                            else {
+                                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
                 }
             }
         });
@@ -531,6 +592,18 @@ app.post('/DeleteProduct', function (req, res) {
                         user: 'root',
                         password: 'Password@1',
                         database: 'factory'
+                    });
+                    var getImageUrlQuery = 'select ImageUrl from product where id = ' + productId;
+                    var oldImageUrl = "";
+                    connection.query(getImageUrlQuery, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            oldImageUrl = rows[0].ImageUrl;
+                            var filePath = oldImageUrl;
+                            fs.unlinkSync(filePath);
+                        }
                     });
                     var query = "delete from product where id = " + productId;
                     connection.query(query, function (error, rows) {
