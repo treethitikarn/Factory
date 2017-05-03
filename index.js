@@ -367,7 +367,7 @@ app.post('/AddNewProduct', function (req, res) {
                 if (req.files) {
                     var file = req.files.uploadfile,
                         filename = file.name;
-                    if(!fs.existsSync(uploadFolder)){
+                    if (!fs.existsSync(uploadFolder)) {
                         fs.mkdirSync(uploadFolder);
                     }
                     file.mv(uploadFolder + filename, function (err) {
@@ -435,6 +435,9 @@ app.post('/UpdateProduct', function (req, res) {
                     if (req.files) {
                         var file = req.files.uploadfile,
                             filename = file.name;
+                        if (!fs.existsSync(uploadFolder)) {
+                            fs.mkdirSync(uploadFolder);
+                        }
                         file.mv(uploadFolder + filename, function (err) {
                             if (err) {
                                 console.log(err);
