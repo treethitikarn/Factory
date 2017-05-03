@@ -5,7 +5,8 @@ var bcrypt = require('bcrypt-nodejs');
 var upload = require('express-fileupload');
 var path = require('path');
 var fs = require('fs');
-var uploadFolder = "./upload/";
+var folderName = "\\upload\\";
+var uploadFolder = "." + folderName;
 
 var queryGetProductList = 'SELECT * from product order by id';
 var queryGetProductById = 'Select * from product where id={0}';
@@ -376,6 +377,7 @@ app.post('/AddNewProduct', function (req, res) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                         }
                         else {
+                            var absolutepath = __dirname + folderName + filename;
                             let connection = mysql.createConnection({
                                 host: 'localhost',
                                 user: 'root',
@@ -389,7 +391,7 @@ app.post('/AddNewProduct', function (req, res) {
                                         EmployeeId,\
                                         ImageUrl,\
                                         InsertedDate) \
-                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ",'" + uploadFolder + filename + "', NOW());";
+                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ",'" + absolutepath + "', NOW());";
                             connection.query(query, function (error, rows) {
                                 if (error) {
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
@@ -503,8 +505,9 @@ app.post('/AddProductAmount', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    var productId = json.productId;
-    var amount = json.amount;
+    var productAmount = json.productAmount;
+    // var productId = json.productId;
+    // var amount = json.amount;
     let connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
@@ -517,20 +520,23 @@ app.post('/AddProductAmount', function (req, res) {
         }
         else {
             if (ans) {
-                var getProductAmount;
-                var updateAmount = "update product p1 join product p2 on p1.id = p2.id set p1.amount = (p1.amount + " + amount + ") where p1.id = " + productId;
-                connection.query('insert into producttransaction (amount, employeeid, transactionDate) values(' + amount + ', ' + userId + ', NOW())', function (error, rows) {
-                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
-                    else {
-                        connection.query(updateAmount, function (error, rows) {
-                            connection.end();
-                            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
-                            else {
-                                res.send(JSON.stringify({ status: 1 }));
-                            }
-                        });
-                    }
-                });
+                for (var i = 0; i < productAmount.length; i++) {
+                    var productId = productAmount[i].productId;
+                    var amount = productAmount[i].amount;
+                    var updateAmount = "update product p1 join product p2 on p1.id = p2.id set p1.amount = (p1.amount + " + amount + ") where p1.id = " + productId;
+                    connection.query('insert into producttransaction (amount, productid, employeeid, transactionDate) values(' + amount + ', ' + productId + ', ' + userId + ', NOW())', function (error, rows) {
+                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
+                        else {
+                            connection.query(updateAmount, function (error, rows) {
+                                connection.end();
+                                if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
+                        }
+                    });
+                }
             }
             else {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
