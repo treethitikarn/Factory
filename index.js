@@ -5,7 +5,7 @@ var bcrypt = require('bcrypt-nodejs');
 var upload = require('express-fileupload');
 var path = require('path');
 var fs = require('fs');
-var folderName = "\\upload\\";
+var folderName = "/upload/";
 var uploadFolder = "." + folderName;
 
 var queryGetProductList = 'SELECT * from product order by id';
@@ -373,11 +373,11 @@ app.post('/AddNewProduct', function (req, res) {
                     }
                     file.mv(uploadFolder + filename, function (err) {
                         if (err) {
-                            console.log(err);
                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                         }
                         else {
                             var absolutepath = __dirname + folderName + filename;
+                            absolutepath = absolutepath.replace(/\\/g, '/');
                             let connection = mysql.createConnection({
                                 host: 'localhost',
                                 user: 'root',
@@ -442,7 +442,6 @@ app.post('/UpdateProduct', function (req, res) {
                         }
                         file.mv(uploadFolder + filename, function (err) {
                             if (err) {
-                                console.log(err);
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                             }
                             else {
@@ -566,11 +565,11 @@ app.post('/SearchProduct', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select *\
-                from product\
-                where (('" + productId + "' is null or '" + productId + "' = '') or id = '" + productId + "')\
-                and (('" + productName + "' is null or '" + productName + "' = '') or name = '" + productName + "')\
-                and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or producttypeid = '" + productTypeId + "')";
+                var query = "select p.id as id, p.name as name, pt.name as producttypename, p.amount as amount\
+                from product p join producttype pt on p.producttypeid = pt.id\
+                where (('" + productId + "' is null or '" + productId + "' = '') or p.id = '" + productId + "')\
+                and (('" + productName + "' is null or '" + productName + "' = '') or p.name = '" + productName + "')\
+                and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or p.producttypeid = '" + productTypeId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -865,7 +864,7 @@ app.post('/GetMaterialList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
             else {
-                var query = "select * from material where id <> 1";
+                var query = "select * from material";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1042,11 +1041,11 @@ app.post('/SearchMaterial', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select *\
-                from material\
-                where (('" + materialId + "' is null or '" + materialId + "' = '') or id = '" + materialId + "')\
-                and (('" + materialName + "' is null or '" + materialName + "' = '') or name = '" + materialName + "')\
-                and (('" + materialTypeId + "' is null or '" + materialTypeId + "' = '') or materialTypeId = '" + materialTypeId + "')";
+                var query = "select m.id id, m.name name, mt.name materialtypename, m.amount amount\
+                from material m join materialtype mt on m.materialtypeid = mt.id\
+                where (('" + materialId + "' is null or '" + materialId + "' = '') or m.id = '" + materialId + "')\
+                and (('" + materialName + "' is null or '" + materialName + "' = '') or m.name = '" + materialName + "')\
+                and (('" + materialTypeId + "' is null or '" + materialTypeId + "' = '') or m.materialTypeId = '" + materialTypeId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1322,11 +1321,11 @@ app.post('/SearchCustomer', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select *\
-                from customer\
-                where (('" + customerId + "' is null or '" + customerId + "' = '') or id = '" + customerId + "')\
-                and (('" + customerName + "' is null or '" + customerName + "' = '') or name = '" + customerName + "')\
-                and (('" + regionId + "' is null or '" + regionId + "' = '') or regionId = '" + regionId + "')";
+                var query = "select c.id id, c.name name, r.name regionname, c.phone phone\
+                from customer c join region r on c.regionid = r.id\
+                where (('" + customerId + "' is null or '" + customerId + "' = '') or c.id = '" + customerId + "')\
+                and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name = '" + customerName + "')\
+                and (('" + regionId + "' is null or '" + regionId + "' = '') or c.sregionId = '" + regionId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1643,7 +1642,6 @@ app.post('/SearchOrder', function (req, res) {
                 and (('" + regionId + "' is null or '" + regionId + "' = '') or c.regionId = '" + regionId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
-                    console.log(query);
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -1883,9 +1881,9 @@ app.post('/SearchMaterialTransaction', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select *\
-                from materialtransaction\
-                where date(`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s'))";
+                var query = "select m.id as id, m.name as name, mt.acquire acquire, mt.use use, mt.balance balance\
+                from materialtransaction mt join material m on mt.materialid = m.id\
+                where date(mt.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s'))";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1956,9 +1954,9 @@ app.post('/SearchProductTransaction', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select *\
-                from producttransaction\
-                where date(transactiondate) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s'))";
+                var query = "select p.id id, p.name name, pt.amount amount\
+                from producttransaction pt join product p on pt.productid = p.id\
+                where date(pt.transactiondate) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s'))";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
