@@ -504,9 +504,8 @@ app.post('/AddProductAmount', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
+    var productId = json.productId;
     var productAmount = json.productAmount;
-    // var productId = json.productId;
-    // var amount = json.amount;
     let connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
@@ -519,22 +518,27 @@ app.post('/AddProductAmount', function (req, res) {
         }
         else {
             if (ans) {
-                for (var i = 0; i < productAmount.length; i++) {
-                    var productId = productAmount[i].productId;
-                    var amount = productAmount[i].amount;
-                    var updateAmount = "update product p1 join product p2 on p1.id = p2.id set p1.amount = (p1.amount + " + amount + ") where p1.id = " + productId;
-                    connection.query('insert into producttransaction (amount, productid, employeeid, transactionDate) values(' + amount + ', ' + productId + ', ' + userId + ', NOW())', function (error, rows) {
-                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
-                        else {
-                            connection.query(updateAmount, function (error, rows) {
-                                connection.end();
-                                if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
-                                else {
-                                    res.send(JSON.stringify({ status: 1 }));
-                                }
-                            });
-                        }
-                    });
+                if (productId.length != productAmount.length) {
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId and ProductAmount มีจำนวนไม่เท่ากัน' }));
+                }
+                else {
+                    for (var i = 0; i < productAmount.length; i++) {
+                        var amount = productAmount[i];
+                        var id = productId[i];
+                        var updateAmount = "update product p1 join product p2 on p1.id = p2.id set p1.amount = (p1.amount + " + amount + ") where p1.id = " + id;
+                        connection.query('insert into producttransaction (amount, productid, employeeid, transactionDate) values(' + amount + ', ' + id + ', ' + userId + ', NOW())', function (error, rows) {
+                            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
+                            else {
+                                connection.query(updateAmount, function (error, rows) {
+                                    connection.end();
+                                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
+                                    else {
+                                        res.send(JSON.stringify({ status: 1 }));
+                                    }
+                                });
+                            }
+                        });
+                    }
                 }
             }
             else {
@@ -1455,7 +1459,10 @@ app.post('/AddNewOrder', function (req, res) {
     var userId = json.userId;
     var token = json.token;
     var customerId = json.customerId;
-    var purchaseList = json.purchaseList;
+    var productId = json.productId;
+    var amount = json.amount;
+    var priceperpiece = json.priceperpiece;
+    // var purchaseList = json.purchaseList;
     isLogin(userId, token, function (error, ans) {
         if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
         else {
@@ -1478,23 +1485,28 @@ app.post('/AddNewOrder', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        var insertQuery = "insert into orderdetails (orderid, productid, amount, priceperpiece, employeeid, `datetime`) values ";
-                        for (var i = 0; i < purchaseList.length; i++) {
-                            var productId = purchaseList[i].productId;
-                            var amount = purchaseList[i].amount;
-                            var priceperpiece = purchaseList[i].priceperpiece;
-                            insertQuery += "(" + rows['insertId'] + ", " + productId + ", " + amount + ", " + priceperpiece + ", " + userId + ", NOW())";
-                            if (i != purchaseList.length - 1) insertQuery += ",";
+                        if (productId.length != amount.length != priceperpiece.length) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Amount, PricePerPiece มีจำนวนไม่เท่ากัน' }));
                         }
-                        connection.query(insertQuery, function (error, valueRow) {
-                            connection.end();
-                            if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot add new purchase to order.' }));
+                        else {
+                            var insertQuery = "insert into orderdetails (orderid, productid, amount, priceperpiece, employeeid, `datetime`) values ";
+                            for (var i = 0; i < productId.length; i++) {
+                                var id = productId[i];
+                                var eachamount = amount[i]
+                                var eachpriceperpiece = priceperpiece[i];
+                                insertQuery += "(" + rows['insertId'] + ", " + id + ", " + eachamount + ", " + eachpriceperpiece + ", " + userId + ", NOW())";
+                                if (i != purchaseList.length - 1) insertQuery += ",";
                             }
-                            else {
-                                res.send(JSON.stringify({ status: 1 }));
-                            }
-                        });
+                            connection.query(insertQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot add new purchase to order.' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
+                        }
                     }
                 });
             }
@@ -1509,7 +1521,10 @@ app.post('/EditOrder', function (req, res) {
     var token = json.token;
     var orderId = json.orderId;
     var customerId = json.customerId;
-    var purchaseList = json.purchaseList;
+    var orderDetailId = json.orderDetailId;
+    var productId = json.productId;
+    var priceperpiece = json.priceperpiece;
+    var amount = json.amount;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
             if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
@@ -1538,34 +1553,39 @@ app.post('/EditOrder', function (req, res) {
                             var priceperpieceCase = "priceperpiece = case ";
                             var amountCase = "amount = case ";
                             var orderDetailIdList = "where id in (";
-                            for (var i = 0; i < purchaseList.length; i++) {
-                                var orderDetailId = purchaseList[i].orderDetailId;
-                                var productId = purchaseList[i].productId;
-                                var priceperpiece = purchaseList[i].priceperpiece;
-                                var amount = purchaseList[i].amount;
-
-                                productIdCase += 'when id = ' + orderDetailId + " then " + productId + " ";
-                                priceperpieceCase += 'when id = ' + orderDetailId + " then " + priceperpiece + " ";
-                                amountCase += 'when id = ' + orderDetailId + " then " + amount + " ";
-                                orderDetailIdList += orderDetailId;
-                                if (i != purchaseList.length - 1) {
-                                    orderDetailIdList += ',';
-                                }
+                            if (orderDetailId.length != productId.length != priceperpiece.length != amount.length) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'OrderDetailId, ProductId, PricePerPiece and Amount มีจำนวนไม่เท่ากัน' }));
                             }
-                            productIdCase += "end,";
-                            priceperpieceCase += "end,";
-                            amountCase += "end, isUpdated = 1 ";
-                            orderDetailIdList += ')'
-                            updateQuery = "update orderdetails " + productIdCase + priceperpieceCase + amountCase + orderDetailIdList;
-                            connection.query(updateQuery, function (error, valueRow) {
-                                connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update purchase in order.' }));
+                            else {
+                                for (var i = 0; i < orderDetailId.length; i++) {
+                                    var eacgorderDetailId = orderDetailId[i];
+                                    var eacgproductId = productId[i];
+                                    var eacgpriceperpiece = priceperpiece[i];
+                                    var eachamount = amount[i];
+
+                                    productIdCase += 'when id = ' + eacgorderDetailId + " then " + eacgproductId + " ";
+                                    priceperpieceCase += 'when id = ' + eacgorderDetailId + " then " + eacgpriceperpiece + " ";
+                                    amountCase += 'when id = ' + eacgorderDetailId + " then " + eachamount + " ";
+                                    orderDetailIdList += eacgorderDetailId;
+                                    if (i != purchaseList.length - 1) {
+                                        orderDetailIdList += ',';
+                                    }
                                 }
-                                else {
-                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                }
-                            });
+                                productIdCase += "end,";
+                                priceperpieceCase += "end,";
+                                amountCase += "end, isUpdated = 1 ";
+                                orderDetailIdList += ')'
+                                updateQuery = "update orderdetails " + productIdCase + priceperpieceCase + amountCase + orderDetailIdList;
+                                connection.query(updateQuery, function (error, valueRow) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update purchase in order.' }));
+                                    }
+                                    else {
+                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                    }
+                                });
+                            }
                         }
                     });
                 }
