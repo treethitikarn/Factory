@@ -522,30 +522,33 @@ app.post('/AddProductAmount', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId and ProductAmount มีจำนวนไม่เท่ากัน' }));
                 }
                 else {
+                    var insert = 'insert into producttransaction (amount, productid, employeeid, transactionDate) values ';
+                    var updateAmount = "update product p1 join product p2 on p1.id = p2.id set p1.amount = case ";
                     for (var i = 0; i < productAmount.length; i++) {
                         var amount = productAmount[i];
                         var id = productId[i];
-                        var updateAmount = "update product p1 join product p2 on p1.id = p2.id set p1.amount = (p1.amount + " + amount + ") where p1.id = " + id;
-                        connection.query('insert into producttransaction (amount, productid, employeeid, transactionDate) values(' + amount + ', ' + id + ', ' + userId + ', NOW())', function (error, rows) {
-                            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
-                            else {
-                                connection.query(updateAmount, function (error, rows) {
-                                    connection.end();
-                                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
-                                    else {
-                                        res.send(JSON.stringify({ status: 1 }));
-                                    }
-                                });
-                            }
-                        });
+                        insert += '(' + amount + ', ' + id + ', ' + userId + ', NOW()) ';
+                        updateAmount += "when p1.id = " + id + " then p1.amount + " + amount + " ";
+                        if (i != productAmount.length - 1) insert += ",";
+                        else updateAmount += "else p1.amount end;";
                     }
+                    connection.query(insert, function (error, rows) {
+                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
+                        else {
+                            connection.query(updateAmount, function (error, rows) {
+                                if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
+                        }
+                    });
                 }
             }
             else {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
         }
-
     });
 });
 
@@ -1462,7 +1465,6 @@ app.post('/AddNewOrder', function (req, res) {
     var productId = json.productId;
     var amount = json.amount;
     var priceperpiece = json.priceperpiece;
-    // var purchaseList = json.purchaseList;
     isLogin(userId, token, function (error, ans) {
         if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
         else {
@@ -1548,34 +1550,26 @@ app.post('/EditOrder', function (req, res) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
-                            var updateQuery = "";
-                            var productIdCase = "set productId = case ";
-                            var priceperpieceCase = "priceperpiece = case ";
-                            var amountCase = "amount = case ";
-                            var orderDetailIdList = "where id in (";
-                            if (orderDetailId.length != productId.length != priceperpiece.length != amount.length) {
+                            var q = 'if (not exist(select id from orderdetails where id = ' + '))';
+                            var insertquery = 'INSERT INTO orderdetails (id, orderid, priceperpiece, amount, employeeid, datetime, productid) ';
+                            var valuesquery = 'Values ';
+                            var duplicatequery = 'ON DUPLICATE KEY UPDATE priceperpiece = values(priceperpiece), amount = values(amount)';
+                            if ((orderDetailId.length != productId.length) || (priceperpiece.length != amount.length)) {
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'OrderDetailId, ProductId, PricePerPiece and Amount มีจำนวนไม่เท่ากัน' }));
                             }
                             else {
                                 for (var i = 0; i < orderDetailId.length; i++) {
-                                    var eacgorderDetailId = orderDetailId[i];
-                                    var eacgproductId = productId[i];
-                                    var eacgpriceperpiece = priceperpiece[i];
+                                    var eachorderDetailId = orderDetailId[i];
+                                    var eachproductId = productId[i];
+                                    var eachpriceperpiece = priceperpiece[i];
                                     var eachamount = amount[i];
-
-                                    productIdCase += 'when id = ' + eacgorderDetailId + " then " + eacgproductId + " ";
-                                    priceperpieceCase += 'when id = ' + eacgorderDetailId + " then " + eacgpriceperpiece + " ";
-                                    amountCase += 'when id = ' + eacgorderDetailId + " then " + eachamount + " ";
-                                    orderDetailIdList += eacgorderDetailId;
-                                    if (i != purchaseList.length - 1) {
-                                        orderDetailIdList += ',';
+                                    valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now(), ' + eachproductId + ')';
+                                    if (i != orderDetailId.length - 1) {
+                                        valuesquery += ',';
                                     }
                                 }
-                                productIdCase += "end,";
-                                priceperpieceCase += "end,";
-                                amountCase += "end, isUpdated = 1 ";
-                                orderDetailIdList += ')'
-                                updateQuery = "update orderdetails " + productIdCase + priceperpieceCase + amountCase + orderDetailIdList;
+                                var updateQuery = insertquery + valuesquery + duplicatequery;
+                                console.log(updateQuery);
                                 connection.query(updateQuery, function (error, valueRow) {
                                     connection.end();
                                     if (error) {
@@ -1816,20 +1810,21 @@ app.post('/AddNewMaterialTransaction', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var insertQuery = "Insert into materialtransaction (materialId,\
-                                        acquire,\
-                                        `use`,\
-                                        balance,\
-                                        `datetime`,\
-                                        employeeid) \
-                                        values(" + materialId + ", " + acquire + ", " + use +
-                    ", (select amount from material where id = " + materialId + " limit 1) - " + use + " + " + acquire + ", NOW(), " + userId + ");";
+                var insertQuery = 'insert into materialtransaction (materialId,acquire,`use`,balance,`datetime`,employeeid) values ';
+                var updateQuery = "update material m1 join material m2 on m1.id = m2.id set m1.amount = case ";
+                for (var i = 0; i < materialId.length; i++) {
+                    insertQuery += '(' + materialId[i] + ', ' + acquire[i] + ', ' + use[i] + ', (select amount from material where id = ' + materialId[i] + ' limit 1) - ' + use[i] + ', NOW(), ' + userId + ') ';
+                    updateQuery += 'when m2.id = ' + materialId[i] + ' then m2.amount - ' + use[i] + " + " + acquire[i] + ' ';
+                    if (i != materialId.length - 1) {
+                        insertQuery += ', ';
+                    }
+                    else updateQuery += "else m2.amount end;";
+                }
                 connection.query(insertQuery, function (error, rows) {
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        var updateQuery = "update material m1 join material m2 on m1.id = m2.id set m1.amount = m2.amount - " + use + " + " + acquire;
                         connection.query(updateQuery, function (error, rows) {
                             if (error) {
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
