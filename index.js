@@ -1402,7 +1402,7 @@ app.post('/GetOrderList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
             else {
-                var query = "select * from `order`";
+                var query = "select o.id id, o.`datetime` datetime, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id join orderdetails od on o.id = od.orderid group by od.orderid";
                 connection.query(query, function (error, rows) {
                     connection.end();
 
@@ -1445,7 +1445,7 @@ app.post('/GetOrderById', function (req, res) {
                     connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
                     else {
-                        res.send(JSON.stringify({ status: 1, data: rows }));
+                        res.send(JSON.stringify({ status: 1, data: rows[0] }));
                     }
                 });
             }
@@ -1487,7 +1487,7 @@ app.post('/AddNewOrder', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if (productId.length != amount.length != priceperpiece.length) {
+                        if ((productId.length != amount.length) && (productId.length != priceperpiece.length) && (amount.length != priceperpiece.length)) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Amount, PricePerPiece มีจำนวนไม่เท่ากัน' }));
                         }
                         else {
@@ -1896,7 +1896,7 @@ app.post('/SearchMaterialTransaction', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select m.id as id, m.name as name, mt.acquire acquire, mt.use use, mt.balance balance\
+                var query = "select m.id as id, m.name as name, mt.acquire acquire, mt.use `use`, mt.balance balance\
                 from materialtransaction mt join material m on mt.materialid = m.id\
                 where date(mt.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s'))";
                 connection.query(query, function (error, rows) {
