@@ -1440,7 +1440,7 @@ app.post('/GetOrderById', function (req, res) {
         }
         else {
             if (ans) {
-                var query = 'Select * from `order` as o join orderdetails od on o.id = od.orderid where o.id=' + orderId;
+                var query = 'Select * from `order` as o left join orderdetails od on o.id = od.orderid where o.id=' + orderId;
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
