@@ -1445,7 +1445,7 @@ app.post('/GetOrderById', function (req, res) {
                     connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
                     else {
-                        res.send(JSON.stringify({ status: 1, data: rows[0] }));
+                        res.send(JSON.stringify({ status: 1, data: rows }));
                     }
                 });
             }
