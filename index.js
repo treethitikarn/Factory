@@ -1402,7 +1402,7 @@ app.post('/GetOrderList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
             else {
-                var query = "select o.id id, o.`datetime` datetime, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id join orderdetails od on o.id = od.orderid group by od.orderid";
+                var query = "select o.id id, o.`datetime` datetime, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id left join orderdetails od on o.id = od.orderid group by od.orderid order by datetime";
                 connection.query(query, function (error, rows) {
                     connection.end();
 
