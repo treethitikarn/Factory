@@ -1497,7 +1497,7 @@ app.post('/AddNewOrder', function (req, res) {
                                 var eachamount = amount[i]
                                 var eachpriceperpiece = priceperpiece[i];
                                 insertQuery += "(" + rows['insertId'] + ", " + id + ", " + eachamount + ", " + eachpriceperpiece + ", " + userId + ", NOW())";
-                                if (i != purchaseList.length - 1) insertQuery += ",";
+                                if (i != productId.length - 1) insertQuery += ",";
                             }
                             connection.query(insertQuery, function (error, valueRow) {
                                 connection.end();
