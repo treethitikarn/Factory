@@ -1796,13 +1796,21 @@ app.post('/EditPurchase', function (req, res) {
                         password: 'Password@1',
                         database: 'factory'
                     });
+                    var updateQuery = "update product set `amount` = `amount` + (select `amount` from orderdetails where id = " + orderdetailsId + ") - " + amount + " where id = (select productid from orderdetails where id = " + orderdetailsId + ")";
                     var query = "update orderdetails set priceperpiece = " + priceperpiece + ", `amount` = " + amount + " where id = " + orderdetailsId;
-                    connection.query(query, function (error, rows) {
+                    connection.query(updateQuery, function (error, rows) {
                         if (error) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 1 }));
+                            connection.query(query, function (error, rows) {
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
                         }
                     });
                 }
@@ -1834,13 +1842,21 @@ app.post('/DeletePurchase', function (req, res) {
                         password: 'Password@1',
                         database: 'factory'
                     });
+                    var updateQuery = "update product set `amount` = `amount` + (select `amount` from orderdetails where id = " + orderdetailsId + ") where id = (select productid from orderdetails where id = " + orderdetailsId + ")";
                     var query = "delete from orderdetails where id = " + orderdetailsId;
-                    connection.query(query, function (error, rows) {
+                    connection.query(updateQuery, function (error, rows) {
                         if (error) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 1 }));
+                            connection.query(query, function (error, rows) {
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
                         }
                     });
                 }
