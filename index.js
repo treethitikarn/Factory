@@ -6,7 +6,7 @@ var upload = require('express-fileupload');
 var path = require('path');
 var fs = require('fs');
 var folderName = "/upload/";
-var uploadFolder = "." + folderName;
+var uploadFolder = __dirname.replace(/\\/gi, '/') + folderName;
 
 var queryGetProductList = 'SELECT * from product order by id';
 var queryGetProductById = 'Select * from product where id={0}';
@@ -191,15 +191,13 @@ app.post('/Login', function (req, res) {
     var query = "Select id, isadmin, password from employee where email='" + email + "'";
     connection.query(query, function (error, rows) {
         if (error) {
-            connection.end();
             res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
         }
-        if (rows.length > 0) {
+        if ((typeof rows != 'undefined') && (rows.length > 0)) {
             if (bcrypt.compareSync(password, rows[0].password)) {
                 var token = bcrypt.hashSync("login");
                 var updateAuthenToken = "update employee set AuthenToken ='" + token + "' where id=" + rows[0].id;
                 connection.query(updateAuthenToken, function (error, ans) {
-                    connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }));
                     else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id }));
                 });
@@ -209,7 +207,6 @@ app.post('/Login', function (req, res) {
             }
         }
         else {
-            connection.end();
             res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
         }
     });
@@ -366,51 +363,57 @@ app.post('/AddNewProduct', function (req, res) {
             }
             else {
                 if (req.files) {
-                    var file = req.files.uploadfile,
-                        filename = file.name;
-                    if (!fs.existsSync(uploadFolder)) {
-                        fs.mkdirSync(uploadFolder);
-                    }
-                    file.mv(uploadFolder + filename, function (err) {
-                        if (err) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
-                        }
-                        else {
-                            var absolutepath = __dirname + folderName + filename;
-                            absolutepath = absolutepath.replace(/\\/g, '/');
-                            let connection = mysql.createConnection({
-                                host: 'localhost',
-                                user: 'root',
-                                password: 'Password@1',
-                                database: 'factory'
-                            });
-                            var query = "Insert into product (Name,\
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "Insert into product (Name,\
                                         ProductTypeId,\
                                         Amount,\
                                         Cost,\
                                         EmployeeId,\
-                                        ImageUrl,\
                                         InsertedDate) \
-                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ",'" + absolutepath + "', NOW());";
-                            connection.query(query, function (error, rows) {
+                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW());";
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            var file = req.files.uploadfile,
+                                filename = rows['insertId'] + '_' + file.name;
+                            var absolutepath = uploadFolder + filename;
+                            if (!fs.existsSync(uploadFolder)) {
+                                fs.mkdirSync(uploadFolder);
+                            }
+                            var insertImageUrl = "update product set imageurl = '" + absolutepath + "' where id = " + rows['insertId'];
+                            connection.query(insertImageUrl, function (error, valueRow) {
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
                                 }
                                 else {
-                                    var selectQuery = "select * from product where id = " + rows['insertId'];
-                                    connection.query(selectQuery, function (error, valueRow) {
-                                        connection.end();
-                                        if (error) {
-                                            res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                    file.mv(absolutepath, function (err) {
+                                        if (err) {
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                         }
                                         else {
-                                            res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                            var selectQuery = "select * from product where id = " + rows['insertId'];
+                                            connection.query(selectQuery, function (error, valueRow) {
+                                                connection.end();
+                                                if (error) {
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                                }
+                                                else {
+                                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                                }
+                                            });
                                         }
                                     });
                                 }
                             });
                         }
-                    })
+                    });
                 }
             }
         }
@@ -436,10 +439,11 @@ app.post('/UpdateProduct', function (req, res) {
                 else {
                     if (req.files) {
                         var file = req.files.uploadfile,
-                            filename = file.name;
+                            filename = productId + "_" + file.name;
                         if (!fs.existsSync(uploadFolder)) {
                             fs.mkdirSync(uploadFolder);
                         }
+                        console.log(uploadFolder + filename);
                         file.mv(uploadFolder + filename, function (err) {
                             if (err) {
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
@@ -460,7 +464,9 @@ app.post('/UpdateProduct', function (req, res) {
                                     else {
                                         oldImageUrl = rows[0].ImageUrl;
                                         var filePath = oldImageUrl;
-                                        fs.unlinkSync(filePath);
+                                        if (fs.existsSync(filePath)) {
+                                            fs.unlinkSync(filePath);
+                                        }
                                     }
                                 });
                                 var query = "update product set \
@@ -473,6 +479,7 @@ app.post('/UpdateProduct', function (req, res) {
                                         where id = " + productId;
                                 connection.query(query, function (error, rows) {
                                     if (error) {
+                                        console.log(query);
                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                                     }
                                     else {
@@ -518,7 +525,7 @@ app.post('/AddProductAmount', function (req, res) {
         }
         else {
             if (ans) {
-                if (productId.length != productAmount.length) {
+                if ((typeof productId == 'undefined' || typeof productAmount == 'undefined') || (productId.length != productAmount.length)) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId and ProductAmount มีจำนวนไม่เท่ากัน' }));
                 }
                 else {
@@ -575,10 +582,11 @@ app.post('/SearchProduct', function (req, res) {
                 var query = "select p.id as id, p.name as name, pt.name as producttypename, p.amount as amount\
                 from product p join producttype pt on p.producttypeid = pt.id\
                 where (('" + productId + "' is null or '" + productId + "' = '') or p.id = '" + productId + "')\
-                and (('" + productName + "' is null or '" + productName + "' = '') or p.name = '" + productName + "')\
+                and (('" + productName + "' is null or '" + productName + "' = '') or p.name like '%" + productName + "%')\
                 and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or p.producttypeid = '" + productTypeId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
+                    console.log(rows);
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -1048,10 +1056,10 @@ app.post('/SearchMaterial', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select m.id id, m.name name, mt.name materialtypename, m.amount amount\
-                from material m join materialtype mt on m.materialtypeid = mt.id\
+                var query = "select m.id id, m.name name, m.materialtypeid materialtypeid, m.amount amount\
+                from material m\
                 where (('" + materialId + "' is null or '" + materialId + "' = '') or m.id = '" + materialId + "')\
-                and (('" + materialName + "' is null or '" + materialName + "' = '') or m.name = '" + materialName + "')\
+                and (('" + materialName + "' is null or '" + materialName + "' = '') or m.name like '%" + materialName + "%')\
                 and (('" + materialTypeId + "' is null or '" + materialTypeId + "' = '') or m.materialTypeId = '" + materialTypeId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
@@ -1130,6 +1138,7 @@ app.post('/GetCustomerList', function (req, res) {
                     }
                     else {
                         if (typeof rows !== 'undefined') {
+                            console.log(rows);
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -1328,11 +1337,11 @@ app.post('/SearchCustomer', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select c.id id, c.name name, r.name regionname, c.phone phone\
-                from customer c join region r on c.regionid = r.id\
+                var query = "select c.id id, c.name Name, c.regionid regionId, c.phone phone\
+                from customer c\
                 where (('" + customerId + "' is null or '" + customerId + "' = '') or c.id = '" + customerId + "')\
-                and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name = '" + customerName + "')\
-                and (('" + regionId + "' is null or '" + regionId + "' = '') or c.sregionId = '" + regionId + "')";
+                and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name like '%" + customerName + "%')\
+                and (('" + regionId + "' is null or '" + regionId + "' = '') or c.regionId = '" + regionId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1411,6 +1420,7 @@ app.post('/GetOrderList', function (req, res) {
                     }
                     else {
                         if (typeof rows !== 'undefined') {
+                            console.log(rows);
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -1828,10 +1838,10 @@ app.post('/SearchOrder', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select o.id,c.name,o.`datetime` as `date`,(select sum(od.priceperpiece * od.amount) from orderdetails as od where od.orderid = o.id) as price \
+                var query = "select o.id,c.name,o.`datetime` datetime,(select sum(od.priceperpiece * od.amount) from orderdetails as od where od.orderid = o.id) price \
                 from `order` o join customer c on o.customerid = c.id \
                 where (('" + orderId + "' is null or '" + orderId + "' = '') or o.id = '" + orderId + "')\
-                and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name = '" + customerName + "')\
+                and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name like '%" + customerName + "%')\
                 and (('" + regionId + "' is null or '" + regionId + "' = '') or c.regionId = '" + regionId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
@@ -1839,6 +1849,7 @@ app.post('/SearchOrder', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
+                        console.log(rows);
                         res.send(JSON.stringify({ status: 1, data: rows }));
                     }
                 });
