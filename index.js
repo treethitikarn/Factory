@@ -173,8 +173,6 @@ app.post('/Login', function (req, res) {
     var query = "Select id, isadmin, password from employee where email='" + email + "'";
     connection.query(query, function (error, rows) {
         if (error) {
-            console.log("1111111111111111111111111111");
-            console.log(error);
             connection.end();
             res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
         }
@@ -185,8 +183,6 @@ app.post('/Login', function (req, res) {
                     var updateAuthenToken = "update employee set AuthenToken ='" + token + "' where id=" + rows[0].id;
                     connection.query(updateAuthenToken, function (error, ans) {
                         connection.end();
-                        console.log("22222222222222222222222222");
-                        console.log(error);
                         if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }));
                         else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id }));
                     });
@@ -1290,10 +1286,7 @@ app.post('/UpdateCustomer', function (req, res) {
                                         `datetime` = NOW() \
                                         where id = " + customerId;
                     connection.query(query, function (error, rows) {
-                        console.log(customerId);
                         if (error) {
-                            console.log(error);
-                            console.log(customerId);
                             connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
@@ -1427,7 +1420,6 @@ app.post('/GetOrderList', function (req, res) {
                     }
                     else {
                         if (typeof rows !== 'undefined') {
-                            console.log(rows);
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -1579,10 +1571,6 @@ app.post('/EditOrder', function (req, res) {
     var productId = json.productId;
     var priceperpiece = json.priceperpiece;
     var amount = json.amount;
-    console.log(orderDetailId);
-    console.log(productId);
-    console.log(priceperpiece);
-    console.log(amount);
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
             if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
@@ -1627,7 +1615,6 @@ app.post('/EditOrder', function (req, res) {
                                             || (typeof amount == 'undefined')) {
                                             var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
                                             connection.query(deleteOrderdetails, function (error, rows) {
-                                                console.log(deleteOrderdetails);
                                                 connection.end();
                                                 if (error) {
                                                     res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when delete orderdetails.' }));
