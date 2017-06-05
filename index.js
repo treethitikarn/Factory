@@ -47,29 +47,7 @@ app.get('/index', function (req, res) {
 app.listen(port, function () {
     console.log('Starting node.js on port ' + port);
 });
-app.post('/uploadFile', function (req, res) {
-    // var filePath = oldImageUrl;
-    fs.unlinkSync(uploadFolder + '/17522766_1402551283134361_7776908201199112813_n.jpg');
-    // if (req.files) {
-    //     var file = req.files.uploadfile,
-    //         filename = file.name;
-    //     var ext = path.extname(filename);
 
-    //     file.mv("./upload/1" + ext, function (err) {
-    //         if (err) {
-    //             console.log(err);
-    //             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
-    //         }
-    //         else {
-    //             console.log('Done!');
-    //             res.send(JSON.stringify({ status: 1 }));
-    //         }
-    //     })
-    // }
-    // else {
-    //     console.log('wrong');
-    // }
-});
 app.post('/GetRegionList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
@@ -89,7 +67,6 @@ app.post('/GetRegionList', function (req, res) {
             else {
                 connection.query("select * from region", function (error, rows) {
                     connection.end();
-
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -126,7 +103,6 @@ app.post('/GetMaterialTypeList', function (req, res) {
             else {
                 connection.query("select * from materialtype", function (error, rows) {
                     connection.end();
-
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -159,21 +135,27 @@ app.post('/Register', function (req, res) {
     var selectExistEmailQuery = "select * from employee where email='" + email + "'";
     var insertQuery = "insert into employee (name, email, password, isAdmin) values('" + name + "','" + email + "','" + password + "'," + isAdmin + ")";
     connection.query(selectExistEmailQuery, function (error, rows) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: error }))
-        if (rows.length > 0) {
-            res.send(JSON.stringify({ status: 0, errorMessage: "This email already has registered." }))
+        if (error) {
+            connection.end();
+            res.send(JSON.stringify({ status: 0, errorMessage: error }));
         }
         else {
-            connection.query(insertQuery, function (error, rows) {
+            if (rows.length > 0) {
                 connection.end();
-                if (error) res.send(JSON.stringify({ status: 0, errorMessage: error }))
-                try {
-                    res.send(JSON.stringify({ status: 1 }));
-                }
-                catch (err) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: "Cannot register." }))
-                }
-            });
+                res.send(JSON.stringify({ status: 0, errorMessage: "This email already has registered." }))
+            }
+            else {
+                connection.query(insertQuery, function (error, rows) {
+                    connection.end();
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: error }))
+                    try {
+                        res.send(JSON.stringify({ status: 1 }));
+                    }
+                    catch (err) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: "Cannot register." }))
+                    }
+                });
+            }
         }
     });
 });
@@ -191,23 +173,33 @@ app.post('/Login', function (req, res) {
     var query = "Select id, isadmin, password from employee where email='" + email + "'";
     connection.query(query, function (error, rows) {
         if (error) {
+            console.log("1111111111111111111111111111");
+            console.log(error);
+            connection.end();
             res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
-        }
-        if ((typeof rows != 'undefined') && (rows.length > 0)) {
-            if (bcrypt.compareSync(password, rows[0].password)) {
-                var token = bcrypt.hashSync("login");
-                var updateAuthenToken = "update employee set AuthenToken ='" + token + "' where id=" + rows[0].id;
-                connection.query(updateAuthenToken, function (error, ans) {
-                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }));
-                    else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id }));
-                });
-            }
-            else {
-                res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
-            }
         }
         else {
-            res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
+            if ((typeof rows != 'undefined') && (rows.length > 0)) {
+                if (bcrypt.compareSync(password, rows[0].password)) {
+                    var token = bcrypt.hashSync("login");
+                    var updateAuthenToken = "update employee set AuthenToken ='" + token + "' where id=" + rows[0].id;
+                    connection.query(updateAuthenToken, function (error, ans) {
+                        connection.end();
+                        console.log("22222222222222222222222222");
+                        console.log(error);
+                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }));
+                        else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id }));
+                    });
+                }
+                else {
+                    connection.end();
+                    res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
+                }
+            }
+            else {
+                connection.end();
+                res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
+            }
         }
     });
 });
@@ -239,6 +231,7 @@ function isLogin(userId, token, callback) {
         database: 'factory'
     });
     connection.query(checkTokenQuery, function (error, rows) {
+        connection.end();
         if (error) {
             callback(error, false);
         }
@@ -296,7 +289,6 @@ app.post('/GetProductList', function (req, res) {
             else {
                 connection.query(queryGetProductList, function (error, rows) {
                     connection.end();
-
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -378,6 +370,7 @@ app.post('/AddNewProduct', function (req, res) {
                                         values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW());";
                     connection.query(query, function (error, rows) {
                         if (error) {
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
@@ -390,11 +383,13 @@ app.post('/AddNewProduct', function (req, res) {
                             var insertImageUrl = "update product set imageurl = '" + absolutepath + "' where id = " + rows['insertId'];
                             connection.query(insertImageUrl, function (error, valueRow) {
                                 if (error) {
+                                    connection.end();
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
                                 }
                                 else {
                                     file.mv(absolutepath, function (err) {
                                         if (err) {
+                                            connection.end();
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                         }
                                         else {
@@ -443,7 +438,6 @@ app.post('/UpdateProduct', function (req, res) {
                         if (!fs.existsSync(uploadFolder)) {
                             fs.mkdirSync(uploadFolder);
                         }
-                        console.log(uploadFolder + filename);
                         file.mv(uploadFolder + filename, function (err) {
                             if (err) {
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
@@ -479,7 +473,7 @@ app.post('/UpdateProduct', function (req, res) {
                                         where id = " + productId;
                                 connection.query(query, function (error, rows) {
                                     if (error) {
-                                        console.log(query);
+                                        connection.end();
                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                                     }
                                     else {
@@ -579,14 +573,13 @@ app.post('/SearchProduct', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select p.id as id, p.name as name, pt.name as producttypename, p.amount as amount\
-                from product p join producttype pt on p.producttypeid = pt.id\
+                var query = "select p.id as id, p.name as name, p.producttypeid as ProductTypeId, p.amount as amount\
+                from product p\
                 where (('" + productId + "' is null or '" + productId + "' = '') or p.id = '" + productId + "')\
                 and (('" + productName + "' is null or '" + productName + "' = '') or p.name like '%" + productName + "%')\
                 and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or p.producttypeid = '" + productTypeId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
-                    console.log(rows);
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -633,6 +626,7 @@ app.post('/DeleteProduct', function (req, res) {
                     });
                     var query = "delete from product where id = " + productId;
                     connection.query(query, function (error, rows) {
+                        connection.end();
                         if (error) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
@@ -669,7 +663,6 @@ app.post('/GetProductTypeList', function (req, res) {
                 var query = "select * from producttype where id <> 1";
                 connection.query(query, function (error, rows) {
                     connection.end();
-
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -744,6 +737,7 @@ app.post('/AddNewProductType', function (req, res) {
                                         values('" + productTypeName + "'," + userId + ", NOW());";
                 connection.query(query, function (error, rows) {
                     if (error) {
+                        connection.end();
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
@@ -792,6 +786,7 @@ app.post('/UpdateProductType', function (req, res) {
                                         where id = " + productTypeId;
                     connection.query(query, function (error, rows) {
                         if (error) {
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
@@ -839,6 +834,7 @@ app.post('/DeleteProductType', function (req, res) {
                     var query = "delete from producttype where id = " + productTypeId;
                     connection.query(query, function (error, rows) {
                         if (error) {
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
@@ -960,6 +956,7 @@ app.post('/AddNewMaterial', function (req, res) {
                                         values('" + materialName + "', " + materialTypeId + "," + materialAmount + "," + userId + ", NOW());";
                 connection.query(query, function (error, rows) {
                     if (error) {
+                        connection.end();
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
@@ -1012,6 +1009,7 @@ app.post('/UpdateMaterial', function (req, res) {
                                         where id = " + materialId;
                     connection.query(query, function (error, rows) {
                         if (error) {
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
@@ -1138,7 +1136,6 @@ app.post('/GetCustomerList', function (req, res) {
                     }
                     else {
                         if (typeof rows !== 'undefined') {
-                            console.log(rows);
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
@@ -1228,6 +1225,7 @@ app.post('/AddNewCustomer', function (req, res) {
                     phone + "','" + transporter + "','" + transporterPhone + "', NOW(), " + userId + ");";
                 connection.query(query, function (error, rows) {
                     if (error) {
+                        connection.end();
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
@@ -1292,10 +1290,15 @@ app.post('/UpdateCustomer', function (req, res) {
                                         `datetime` = NOW() \
                                         where id = " + customerId;
                     connection.query(query, function (error, rows) {
+                        console.log(customerId);
                         if (error) {
+                            console.log(error);
+                            console.log(customerId);
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
+
                             var selectQuery = "select * from customer where id = " + customerId;
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
@@ -1331,26 +1334,31 @@ app.post('/SearchCustomer', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
             else {
-                let connection = mysql.createConnection({
-                    host: 'localhost',
-                    user: 'root',
-                    password: 'Password@1',
-                    database: 'factory'
-                });
-                var query = "select c.id id, c.name Name, c.regionid regionId, c.phone phone\
+                if ((typeof customerId !== 'undefined') && (typeof customerName !== 'undefined') && (typeof regionId !== 'undefined')) {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "select c.id id, c.name Name, c.regionid regionId, c.phone phone\
                 from customer c\
                 where (('" + customerId + "' is null or '" + customerId + "' = '') or c.id = '" + customerId + "')\
                 and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name like '%" + customerName + "%')\
                 and (('" + regionId + "' is null or '" + regionId + "' = '') or c.regionId = '" + regionId + "')";
-                connection.query(query, function (error, rows) {
-                    connection.end();
-                    if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
-                    }
-                    else {
-                        res.send(JSON.stringify({ status: 1, data: rows }));
-                    }
-                });
+                    connection.query(query, function (error, rows) {
+                        connection.end();
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 1, data: rows }));
+                        }
+                    });
+                }
+                else {
+                    res.send(JSON.stringify({ status: 0, data: 'Input should not be undefined.' }));
+                }
             }
         }
     });
@@ -1411,10 +1419,9 @@ app.post('/GetOrderList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
             else {
-                var query = "select o.id id, o.`datetime` datetime, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id left join orderdetails od on o.id = od.orderid group by od.orderid order by datetime";
+                var query = "select o.id id, o.`datetime` datetime, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id left join orderdetails od on o.id = od.orderid group by o.id order by datetime";
                 connection.query(query, function (error, rows) {
                     connection.end();
-
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -1494,40 +1501,51 @@ app.post('/AddNewOrder', function (req, res) {
                                         values(" + customerId + ", " + userId + ", NOW());";
                 connection.query(query, function (error, rows) {
                     if (error) {
+                        connection.end();
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        if ((productId.length != amount.length) && (productId.length != priceperpiece.length) && (amount.length != priceperpiece.length)) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Amount, PricePerPiece มีจำนวนไม่เท่ากัน' }));
+                        if ((typeof productId == 'undefined')
+                            || (typeof priceperpiece == 'undefined')
+                            || (typeof amount == 'undefined')) {
+                            connection.end();
+                            res.send(JSON.stringify({ status: 1 }));
                         }
                         else {
-                            var insertQuery = "insert into orderdetails (orderid, productid, amount, priceperpiece, employeeid, `datetime`) values ";
-                            var updateQuery = "update product set `amount` = case id ";
-                            for (var i = 0; i < productId.length; i++) {
-                                var id = productId[i];
-                                var eachamount = amount[i]
-                                var eachpriceperpiece = priceperpiece[i];
-                                insertQuery += "(" + rows['insertId'] + ", " + id + ", " + eachamount + ", " + eachpriceperpiece + ", " + userId + ", NOW())";
-                                updateQuery += "when " + id + " then `amount` - " + eachamount + " ";
-                                if (i != productId.length - 1) insertQuery += ",";
-                                else updateQuery += "else `amount` end";
+                            if ((productId.length != amount.length) && (productId.length != priceperpiece.length) && (amount.length != priceperpiece.length)) {
+                                connection.end();
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Amount, PricePerPiece มีจำนวนไม่เท่ากัน' }));
                             }
-                            connection.query(insertQuery, function (error, valueRow) {
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot add new purchase to order.' }));
+                            else {
+                                var insertQuery = "insert into orderdetails (orderid, productid, amount, priceperpiece, employeeid, `datetime`) values ";
+                                var updateQuery = "update product set `amount` = case id ";
+                                for (var i = 0; i < productId.length; i++) {
+                                    var id = productId[i];
+                                    var eachamount = amount[i]
+                                    var eachpriceperpiece = priceperpiece[i];
+                                    insertQuery += "(" + rows['insertId'] + ", " + id + ", " + eachamount + ", " + eachpriceperpiece + ", " + userId + ", NOW())";
+                                    updateQuery += "when " + id + " then `amount` - " + eachamount + " ";
+                                    if (i != productId.length - 1) insertQuery += ",";
+                                    else updateQuery += "else `amount` end";
                                 }
-                                else {
-                                    connection.query(updateQuery, function (error, valueRow) {
+                                connection.query(insertQuery, function (error, valueRow) {
+                                    if (error) {
                                         connection.end();
-                                        if (error) {
-                                            res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update product amount to Product table.' }));
-                                        }
-                                        else {
-                                            res.send(JSON.stringify({ status: 1 }));
-                                        }
-                                    });
-                                }
-                            });
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot add new purchase to order.' }));
+                                    }
+                                    else {
+                                        connection.query(updateQuery, function (error, valueRow) {
+                                            connection.end();
+                                            if (error) {
+                                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update product amount to Product table.' }));
+                                            }
+                                            else {
+                                                res.send(JSON.stringify({ status: 1 }));
+                                            }
+                                        });
+                                    }
+                                });
+                            }
                         }
                     }
                 });
@@ -1561,6 +1579,10 @@ app.post('/EditOrder', function (req, res) {
     var productId = json.productId;
     var priceperpiece = json.priceperpiece;
     var amount = json.amount;
+    console.log(orderDetailId);
+    console.log(productId);
+    console.log(priceperpiece);
+    console.log(amount);
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
             if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
@@ -1579,6 +1601,7 @@ app.post('/EditOrder', function (req, res) {
 
                     connection.query(getOrderDetails, function (error, rows) {
                         if (error) {
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when getOrderDetails.' }));
                         }
                         else {
@@ -1594,6 +1617,7 @@ app.post('/EditOrder', function (req, res) {
                                         where id = " + orderId;
                                 connection.query(query, function (error, rows) {
                                     if (error) {
+                                        connection.end();
                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when update order.' }));
                                     }
                                     else {
@@ -1601,7 +1625,17 @@ app.post('/EditOrder', function (req, res) {
                                             || (typeof productId == 'undefined')
                                             || (typeof priceperpiece == 'undefined')
                                             || (typeof amount == 'undefined')) {
-                                            res.send(JSON.stringify({ status: 1 }));
+                                            var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
+                                            connection.query(deleteOrderdetails, function (error, rows) {
+                                                console.log(deleteOrderdetails);
+                                                connection.end();
+                                                if (error) {
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when delete orderdetails.' }));
+                                                }
+                                                else {
+                                                    res.send(JSON.stringify({ status: 1 }));
+                                                }
+                                            });
                                         }
                                         else {
                                             var q = 'if (not exist(select id from orderdetails where id = ' + '))';
@@ -1614,11 +1648,13 @@ app.post('/EditOrder', function (req, res) {
                                                 || (priceperpiece.length != amount.length)
                                                 || (orderDetailId.length != priceperpiece.length)
                                                 || (productId.length != amount.length)) {
+                                                connection.end();
                                                 res.send(JSON.stringify({ status: 1 }));
                                             }
                                             else {
                                                 connection.query(updateQuery, function (error, rows) {
                                                     if (error) {
+                                                        connection.end();
                                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when update old product amount.' }));
                                                     }
                                                     else {
@@ -1639,11 +1675,13 @@ app.post('/EditOrder', function (req, res) {
                                                         var updateNewProductQuery = insertquery + valuesquery + duplicatequery;
                                                         connection.query(minusQuery, function (error, valueRow) {
                                                             if (error) {
+                                                                connection.end();
                                                                 res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update product amount in product.' }));
                                                             }
                                                             else {
                                                                 connection.query(deleteQuery, function (error, valueRow) {
                                                                     if (error) {
+                                                                        connection.end();
                                                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update purchase in order.' }));
                                                                     }
                                                                     else {
@@ -1675,6 +1713,7 @@ app.post('/EditOrder', function (req, res) {
                                         where id = " + orderId;
                                 connection.query(query, function (error, rows) {
                                     if (error) {
+                                        connection.end();
                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when update order.' }));
                                     }
                                     else {
@@ -1684,6 +1723,7 @@ app.post('/EditOrder', function (req, res) {
                                             || (typeof amount == 'undefined')) {
                                             var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
                                             connection.query(deleteOrderdetails, function (error, rows) {
+                                                connection.end();
                                                 if (error) {
                                                     res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when delete orderdetails.' }));
                                                 }
@@ -1700,6 +1740,7 @@ app.post('/EditOrder', function (req, res) {
                                             var minusQuery = "update product set amount = case id ";
                                             var deleteQuery = "delete from orderdetails where orderid = " + orderId + " and ";
                                             if ((orderDetailId.length != productId.length) || (priceperpiece.length != amount.length)) {
+                                                connection.end();
                                                 res.send(JSON.stringify({ status: 0, errorMessage: 'OrderDetailId, ProductId, PricePerPiece and Amount มีจำนวนไม่เท่ากัน' }));
                                             }
                                             else {
@@ -1718,6 +1759,7 @@ app.post('/EditOrder', function (req, res) {
                                                 var updateQuery = insertquery + valuesquery + duplicatequery;
                                                 connection.query(minusQuery, function (error, valueRow) {
                                                     if (error) {
+                                                        connection.end();
                                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update product amount in product.' }));
                                                     }
                                                     else {
@@ -1773,6 +1815,7 @@ app.post('/DeleteOrder', function (req, res) {
                     var updateQuery = "update product set `amount` = case id ";
                     connection.query(getPurchase, function (error, rows) {
                         if (error) {
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
@@ -1783,10 +1826,12 @@ app.post('/DeleteOrder', function (req, res) {
                                 updateQuery += "else `amount` end";
                                 connection.query(updateQuery, function (error, rows) {
                                     if (error) {
+                                        connection.end();
                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                                     }
                                     else {
                                         connection.query(query, function (error, rows) {
+                                            connection.end();
                                             if (error) {
                                                 res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                                             }
@@ -1799,6 +1844,7 @@ app.post('/DeleteOrder', function (req, res) {
                             }
                             else {
                                 connection.query(query, function (error, rows) {
+                                    connection.end();
                                     if (error) {
                                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                                     }
@@ -1849,7 +1895,6 @@ app.post('/SearchOrder', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
-                        console.log(rows);
                         res.send(JSON.stringify({ status: 1, data: rows }));
                     }
                 });
@@ -1892,12 +1937,13 @@ app.post('/AddNewPurchase', function (req, res) {
                 var updateQuery = "update product set amount = amount - " + amount + " where id = " + productId;
                 connection.query(query, function (error, rows) {
                     if (error) {
+                        connection.end();
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
                         connection.query(updateQuery, function (error, rows) {
+                            connection.end();
                             if (error) {
-
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                             }
                             else {
@@ -1937,10 +1983,12 @@ app.post('/EditPurchase', function (req, res) {
                     var query = "update orderdetails set priceperpiece = " + priceperpiece + ", `amount` = " + amount + " where id = " + orderdetailsId;
                     connection.query(updateQuery, function (error, rows) {
                         if (error) {
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
                             connection.query(query, function (error, rows) {
+                                connection.end();
                                 if (error) {
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                                 }
@@ -1983,10 +2031,12 @@ app.post('/DeletePurchase', function (req, res) {
                     var query = "delete from orderdetails where id = " + orderdetailsId;
                     connection.query(updateQuery, function (error, rows) {
                         if (error) {
+                            connection.end();
                             res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                         }
                         else {
                             connection.query(query, function (error, rows) {
+                                connection.end();
                                 if (error) {
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                                 }
@@ -2028,7 +2078,7 @@ app.post('/AddNewMaterialTransaction', function (req, res) {
                 var insertQuery = 'insert into materialtransaction (materialId,acquire,`use`,balance,`datetime`,employeeid) values ';
                 var updateQuery = "update material m1 join material m2 on m1.id = m2.id set m1.amount = case ";
                 for (var i = 0; i < materialId.length; i++) {
-                    insertQuery += '(' + materialId[i] + ', ' + acquire[i] + ', ' + use[i] + ', (select amount from material where id = ' + materialId[i] + ' limit 1) - ' + use[i] + ', NOW(), ' + userId + ') ';
+                    insertQuery += '(' + materialId[i] + ', ' + acquire[i] + ', ' + use[i] + ', (select amount from material where id = ' + materialId[i] + ' limit 1) - ' + use[i] + ' + ' + acquire[i] + ', NOW(), ' + userId + ') ';
                     updateQuery += 'when m2.id = ' + materialId[i] + ' then m2.amount - ' + use[i] + " + " + acquire[i] + ' ';
                     if (i != materialId.length - 1) {
                         insertQuery += ', ';
@@ -2037,10 +2087,12 @@ app.post('/AddNewMaterialTransaction', function (req, res) {
                 }
                 connection.query(insertQuery, function (error, rows) {
                     if (error) {
+                        connection.end();
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
                     else {
                         connection.query(updateQuery, function (error, rows) {
+                            connection.end();
                             if (error) {
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                             }
@@ -2075,7 +2127,6 @@ app.post('/GetMaterialTransactionList', function (req, res) {
                 var query = 'select * from materialtransaction';
                 connection.query(query, function (error, rows) {
                     connection.end();
-
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
@@ -2148,7 +2199,6 @@ app.post('/GetProductTransactionList', function (req, res) {
                 var query = 'select * from producttransaction order by transactiondate';
                 connection.query(query, function (error, rows) {
                     connection.end();
-
                     if (error) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
                     }
