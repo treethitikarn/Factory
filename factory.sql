@@ -62,10 +62,10 @@ CREATE TABLE `employee` (
   `Name` varchar(50) NOT NULL,
   `IsAdmin` tinyint(1) NOT NULL,
   `Password` varchar(200) NOT NULL,
-  `email` varchar(100) NOT NULL,
+  `username` varchar(100) DEFAULT NULL,
   `AuthenToken` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,6 +74,7 @@ CREATE TABLE `employee` (
 
 LOCK TABLES `employee` WRITE;
 /*!40000 ALTER TABLE `employee` DISABLE KEYS */;
+INSERT INTO `employee` VALUES (1,'eagle1',1,'$2a$10$pPMMn9euzqa/B2QdIkytdekX/.Ci9sQLVi/XkxpsoGPvyeQjlMRrK','eagle1','$2a$10$r4o.Giz.FEA5mT98z02JiuIMAJdlUzMdKjNJdgsnpKR81SecNHuFS'),(2,'eagle2',1,'$2a$10$2pXJ2w6/qusS8K9gbo8BLuHizzRk/poxySo9gXLTkIa4N./s2qaLy','eagle2',NULL),(3,'eagle3',1,'$2a$10$KHnT3uZp7UUIHFl5BzjmJu5U0z4Y7g2a.dzgQnHrt7GgcK.iBh1jy','eagle3',NULL),(4,'eagle4',1,'$2a$10$m3bpgmMiJeQ0LfSVRresI.j2wrSiRiC/Oo6PhZ601scjkiIh5ZIdi','eagel4',NULL),(5,'eagle5',1,'$2a$10$fG7of6qivQlaHctoBeYwLuTY.0rX2qdvj/Nc.gCPAl/RZ7p5myjvS','eagle5',NULL);
 /*!40000 ALTER TABLE `employee` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -226,7 +227,7 @@ CREATE TABLE `product` (
   `Amount` int(11) NOT NULL,
   `Cost` int(11) NOT NULL,
   `EmployeeId` int(11) NOT NULL,
-  `ImageUrl` varchar(500) NOT NULL,
+  `imageurl` varchar(500) DEFAULT NULL,
   `IsUpdated` tinyint(1) DEFAULT NULL,
   `InsertedDate` datetime NOT NULL,
   PRIMARY KEY (`id`)
@@ -254,6 +255,7 @@ CREATE TABLE `producttransaction` (
   `amount` int(11) NOT NULL,
   `employeeId` int(11) NOT NULL,
   `transactionDate` datetime NOT NULL,
+  `productId` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -290,7 +292,7 @@ CREATE TABLE `producttype` (
 
 LOCK TABLES `producttype` WRITE;
 /*!40000 ALTER TABLE `producttype` DISABLE KEYS */;
-INSERT INTO `producttype` VALUES (1,'ไม่มีประเภท',1,NULL,'2017-04-02 07:50:50');
+INSERT INTO `producttype` VALUES (1,'ไม่มีประเภท',0,NULL,'2017-06-18 00:57:44');
 /*!40000 ALTER TABLE `producttype` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -327,4 +329,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-04-02 22:29:12
+-- Dump completed on 2017-06-18 14:26:46
