@@ -123,7 +123,7 @@ app.post('/GetMaterialTypeList', function (req, res) {
 app.post('/Register', function (req, res) {
     var json = req.body;
     var name = json.name;
-    var email = json.email;
+    var username = json.username;
     var password = bcrypt.hashSync(json.password);
     var isAdmin = json.isAdmin;
     let connection = mysql.createConnection({
@@ -132,9 +132,9 @@ app.post('/Register', function (req, res) {
         password: 'Password@1',
         database: 'factory'
     });
-    var selectExistEmailQuery = "select * from employee where email='" + email + "'";
-    var insertQuery = "insert into employee (name, email, password, isAdmin) values('" + name + "','" + email + "','" + password + "'," + isAdmin + ")";
-    connection.query(selectExistEmailQuery, function (error, rows) {
+    var selectExistUsernameQuery = "select * from employee where username='" + username + "'";
+    var insertQuery = "insert into employee (name, username, password, isAdmin) values('" + name + "','" + username + "','" + password + "'," + isAdmin + ")";
+    connection.query(selectExistUsernameQuery, function (error, rows) {
         if (error) {
             connection.end();
             res.send(JSON.stringify({ status: 0, errorMessage: error }));
@@ -142,7 +142,7 @@ app.post('/Register', function (req, res) {
         else {
             if (rows.length > 0) {
                 connection.end();
-                res.send(JSON.stringify({ status: 0, errorMessage: "This email already has registered." }))
+                res.send(JSON.stringify({ status: 0, errorMessage: "This username already has registered." }))
             }
             else {
                 connection.query(insertQuery, function (error, rows) {
@@ -162,7 +162,7 @@ app.post('/Register', function (req, res) {
 
 app.post('/Login', function (req, res) {
     var json = req.body;
-    var email = json.email;
+    var username = json.username;
     var password = json.password;
     let connection = mysql.createConnection({
         host: 'localhost',
@@ -170,11 +170,11 @@ app.post('/Login', function (req, res) {
         password: 'Password@1',
         database: 'factory'
     });
-    var query = "Select id, isadmin, password from employee where email='" + email + "'";
+    var query = "Select id, isadmin, password from employee where username='" + username + "'";
     connection.query(query, function (error, rows) {
         if (error) {
             connection.end();
-            res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
+            res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }))
         }
         else {
             if ((typeof rows != 'undefined') && (rows.length > 0)) {
@@ -183,18 +183,18 @@ app.post('/Login', function (req, res) {
                     var updateAuthenToken = "update employee set AuthenToken ='" + token + "' where id=" + rows[0].id;
                     connection.query(updateAuthenToken, function (error, ans) {
                         connection.end();
-                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }));
+                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }));
                         else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id }));
                     });
                 }
                 else {
                     connection.end();
-                    res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
+                    res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }))
                 }
             }
             else {
                 connection.end();
-                res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
+                res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }))
             }
         }
     });
@@ -213,7 +213,7 @@ app.get('/Logout', function (req, res) {
     });
     connection.query(query, function (error, rows) {
         connection.end();
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your email and password." }))
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }))
         else res.send({ status: 1 })
     });
 });
@@ -244,10 +244,10 @@ function isLogin(userId, token, callback) {
 
 app.post('/ChangePassword', function (req, res) {
     var json = req.body;
-    var email = json.email;
+    var username = json.username;
     var newPassword = json.newPassword;
     var renewPassword = json.renewPassword;
-    var query = "update employee set password='" + bcrypt.hashSync(newPassword) + "' where email='" + email + "'";
+    var query = "update employee set password='" + bcrypt.hashSync(newPassword) + "' where username='" + username + "'";
     if (newPassword == renewPassword) {
         let connection = mysql.createConnection({
             host: 'localhost',
