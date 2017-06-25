@@ -350,7 +350,7 @@ app.post('/AddNewProduct', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
             else {
-                if (req.files) {
+                if (req.files.uploadfile != null) {
                     let connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
@@ -406,6 +406,39 @@ app.post('/AddNewProduct', function (req, res) {
                         }
                     });
                 }
+                else {
+                    let connection = mysql.createConnection({
+                        host: 'localhost',
+                        user: 'root',
+                        password: 'Password@1',
+                        database: 'factory'
+                    });
+                    var query = "Insert into product (Name,\
+                                        ProductTypeId,\
+                                        Amount,\
+                                        Cost,\
+                                        EmployeeId,\
+                                        InsertedDate) \
+                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW());";
+                    connection.query(query, function (error, rows) {
+                        if (error) {
+                            connection.end();
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        }
+                        else {
+                            var selectQuery = "select * from product where id = " + rows['insertId'];
+                            connection.query(selectQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                }
+                            });
+                        }
+                    });
+                }
             }
         }
     });
@@ -428,7 +461,7 @@ app.post('/UpdateProduct', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
                 }
                 else {
-                    if (req.files) {
+                    if (req.files.uploadfile != null) {
                         var file = req.files.uploadfile,
                             filename = productId + "_" + file.name;
                         if (!fs.existsSync(uploadFolder)) {
@@ -483,6 +516,39 @@ app.post('/UpdateProduct', function (req, res) {
                                                 res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
                                             }
                                         });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    else {
+                        let connection = mysql.createConnection({
+                            host: 'localhost',
+                            user: 'root',
+                            password: 'Password@1',
+                            database: 'factory'
+                        });
+                        var query = "update product set \
+                                        Name = '" + productName + "',\
+                                        ProductTypeId = " + productTypeId + ",\
+                                        Cost = " + productCost + ",\
+                                        EmployeeId = " + userId + ",\
+                                        InsertedDate = NOW() \
+                                        where id = " + productId;
+                        connection.query(query, function (error, rows) {
+                            if (error) {
+                                connection.end();
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            }
+                            else {
+                                var selectQuery = "select * from product where id = " + productId;
+                                connection.query(selectQuery, function (error, valueRow) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                    }
+                                    else {
+                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
                                     }
                                 });
                             }
