@@ -1404,7 +1404,7 @@ app.post('/SearchCustomer', function (req, res) {
                         password: 'Password@1',
                         database: 'factory'
                     });
-                    var query = "select c.id id, c.name Name, c.regionid regionId, c.phone phone\
+                    var query = "select c.id id, c.name Name, c.credit credit, c.regionid regionId, c.phone phone\
                 from customer c\
                 where (('" + customerId + "' is null or '" + customerId + "' = '') or c.id = '" + customerId + "')\
                 and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name like '%" + customerName + "%')\
@@ -1482,7 +1482,7 @@ app.post('/GetOrderList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
             }
             else {
-                var query = "select o.id id, o.`datetime` datetime, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id left join orderdetails od on o.id = od.orderid group by o.id order by datetime";
+                var query = "select o.id id, o.`datetime` datetime,c.credit credit, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id left join orderdetails od on o.id = od.orderid group by o.id order by datetime";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1942,8 +1942,7 @@ app.post('/SearchOrder', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                // date(mt.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s')
-                var query = "select o.id,c.name,c.credit,o.`datetime` datetime,(select sum(od.priceperpiece * od.amount) from orderdetails as od where od.orderid = o.id) price \
+                var query = "select o.id,c.name,c.credit credit,o.`datetime` datetime,(select sum(od.priceperpiece * od.amount) from orderdetails as od where od.orderid = o.id) price \
                 from `order` o join customer c on o.customerid = c.id \
                 where (('" + orderId + "' is null or '" + orderId + "' = '') or o.id = '" + orderId + "')\
                 and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name like '%" + customerName + "%')\
