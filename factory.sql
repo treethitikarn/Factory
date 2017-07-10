@@ -37,6 +37,7 @@ CREATE TABLE `customer` (
   `EmployeeId` int(11) DEFAULT NULL,
   `IsUpdated` tinyint(1) DEFAULT NULL,
   `DateTime` datetime DEFAULT NULL,
+  `credit` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -48,6 +49,31 @@ CREATE TABLE `customer` (
 LOCK TABLES `customer` WRITE;
 /*!40000 ALTER TABLE `customer` DISABLE KEYS */;
 /*!40000 ALTER TABLE `customer` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `customerproductprice`
+--
+
+DROP TABLE IF EXISTS `customerproductprice`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `customerproductprice` (
+  `id` int(11) NOT NULL,
+  `ProductId` int(11) NOT NULL,
+  `CustomerId` int(11) NOT NULL,
+  `price` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customerproductprice`
+--
+
+LOCK TABLES `customerproductprice` WRITE;
+/*!40000 ALTER TABLE `customerproductprice` DISABLE KEYS */;
+/*!40000 ALTER TABLE `customerproductprice` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -65,7 +91,7 @@ CREATE TABLE `employee` (
   `username` varchar(100) DEFAULT NULL,
   `AuthenToken` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,7 +100,7 @@ CREATE TABLE `employee` (
 
 LOCK TABLES `employee` WRITE;
 /*!40000 ALTER TABLE `employee` DISABLE KEYS */;
-INSERT INTO `employee` VALUES (1,'eagle1',1,'$2a$10$pPMMn9euzqa/B2QdIkytdekX/.Ci9sQLVi/XkxpsoGPvyeQjlMRrK','eagle1','$2a$10$r4o.Giz.FEA5mT98z02JiuIMAJdlUzMdKjNJdgsnpKR81SecNHuFS'),(2,'eagle2',1,'$2a$10$2pXJ2w6/qusS8K9gbo8BLuHizzRk/poxySo9gXLTkIa4N./s2qaLy','eagle2',NULL),(3,'eagle3',1,'$2a$10$KHnT3uZp7UUIHFl5BzjmJu5U0z4Y7g2a.dzgQnHrt7GgcK.iBh1jy','eagle3',NULL),(4,'eagle4',1,'$2a$10$m3bpgmMiJeQ0LfSVRresI.j2wrSiRiC/Oo6PhZ601scjkiIh5ZIdi','eagel4',NULL),(5,'eagle5',1,'$2a$10$fG7of6qivQlaHctoBeYwLuTY.0rX2qdvj/Nc.gCPAl/RZ7p5myjvS','eagle5',NULL);
+INSERT INTO `employee` VALUES (1,'eagle1',1,'$2a$10$pPMMn9euzqa/B2QdIkytdekX/.Ci9sQLVi/XkxpsoGPvyeQjlMRrK','eagle1',NULL),(2,'eagle2',1,'$2a$10$2pXJ2w6/qusS8K9gbo8BLuHizzRk/poxySo9gXLTkIa4N./s2qaLy','eagle2',NULL),(3,'eagle3',1,'$2a$10$KHnT3uZp7UUIHFl5BzjmJu5U0z4Y7g2a.dzgQnHrt7GgcK.iBh1jy','eagle3',NULL),(4,'eagle4',1,'$2a$10$m3bpgmMiJeQ0LfSVRresI.j2wrSiRiC/Oo6PhZ601scjkiIh5ZIdi','eagel4',NULL),(5,'eagle5',1,'$2a$10$fG7of6qivQlaHctoBeYwLuTY.0rX2qdvj/Nc.gCPAl/RZ7p5myjvS','eagle5',NULL),(6,'eagle6',1,'$2a$10$MM/XLU7pZF9S0GMbeeJ2VO6sKyROhdewFkSUIufMxoKjCsXJ3XdjG','eagle6',NULL),(7,'eagle7',1,'$2a$10$SIe9dfJF0nF9onhKa90v7OBBSHB6vihS0wxUDusnx9NpvcH8hB8Wq','eagle7',NULL),(8,'eagle8',1,'$2a$10$WCOdqBABbavzo3IhtXWNAuYFgsrn926.ahVQxasJen8u7NW3eRMbO','eagle8',NULL),(9,'eagle9',1,'$2a$10$l/DWYDtRywjKGXRWWMEiUe0OaO12T14kBnHGrHL.p/Mc.doJnqNaK','eagle9',NULL),(10,'eagle10',1,'$2a$10$kK3P6KNaXoq7WJ66AyGLgeRg.dUnxo2WSq/DpAgbphjRffMwSln9y','eagle10',NULL);
 /*!40000 ALTER TABLE `employee` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -201,7 +227,7 @@ CREATE TABLE `orderdetails` (
   `datetime` datetime NOT NULL,
   `productid` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -257,7 +283,7 @@ CREATE TABLE `producttransaction` (
   `transactionDate` datetime NOT NULL,
   `productId` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -283,7 +309,7 @@ CREATE TABLE `producttype` (
   `IsUpdated` tinyint(1) DEFAULT NULL,
   `DateTime` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -329,4 +355,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-06-18 14:26:46
+-- Dump completed on 2017-07-10 21:56:34

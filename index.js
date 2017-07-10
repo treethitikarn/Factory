@@ -1257,6 +1257,7 @@ app.post('/AddNewCustomer', function (req, res) {
     var phone = json.phone;
     var transporter = json.transporter;
     var transporterPhone = json.transporterPhone;
+    var credit = json.credit;
     isLogin(userId, token, function (error, ans) {
         if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
         else {
@@ -1281,10 +1282,11 @@ app.post('/AddNewCustomer', function (req, res) {
                                         transporter,\
                                         transporterphone,\
                                         `datetime`,\
-                                        employeeId) \
+                                        employeeId,\
+                                        credit) \
                                         values('" + customerName + "', '" + address + "','" + subdistrict + "','" +
                     district + "','" + province + "','" + postcode + "','" + regionId + "','" +
-                    phone + "','" + transporter + "','" + transporterPhone + "', NOW(), " + userId + ");";
+                    phone + "','" + transporter + "','" + transporterPhone + "', NOW(), " + userId + ", " + credit + ");";
                 connection.query(query, function (error, rows) {
                     if (error) {
                         connection.end();
@@ -1324,6 +1326,7 @@ app.post('/UpdateCustomer', function (req, res) {
     var phone = json.phone;
     var transporter = json.transporter;
     var transporterPhone = json.transporterPhone;
+    var credit = json.credit;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
             if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
@@ -1349,6 +1352,7 @@ app.post('/UpdateCustomer', function (req, res) {
                                         phone = '" + phone + "',\
                                         transporter = '" + transporter + "',\
                                         transporterphone = '" + transporterPhone + "',\
+                                        credit = " + credit + ",\
                                         `datetime` = NOW() \
                                         where id = " + customerId;
                     connection.query(query, function (error, rows) {
@@ -1924,6 +1928,7 @@ app.post('/SearchOrder', function (req, res) {
     var orderId = json.orderId;
     var customerName = json.customerName;
     var regionId = json.regionId;
+    var transactionDate = json.transactionDate;
     isLogin(userId, token, function (error, ans) {
         if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
         else {
@@ -1937,10 +1942,12 @@ app.post('/SearchOrder', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select o.id,c.name,o.`datetime` datetime,(select sum(od.priceperpiece * od.amount) from orderdetails as od where od.orderid = o.id) price \
+                // date(mt.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s')
+                var query = "select o.id,c.name,c.credit,o.`datetime` datetime,(select sum(od.priceperpiece * od.amount) from orderdetails as od where od.orderid = o.id) price \
                 from `order` o join customer c on o.customerid = c.id \
                 where (('" + orderId + "' is null or '" + orderId + "' = '') or o.id = '" + orderId + "')\
                 and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name like '%" + customerName + "%')\
+                and date(mt.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s')\
                 and (('" + regionId + "' is null or '" + regionId + "' = '') or c.regionId = '" + regionId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
@@ -2297,6 +2304,139 @@ app.post('/SearchProductTransaction', function (req, res) {
                     }
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
+
+app.post('/AddNewCustomerProductPrice', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerId = json.customerId;
+    var price = json.price;
+    var productId = json.productId;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                if ((typeof price == 'undefined')
+                    || (typeof priceperpiece == 'undefined')
+                    || (typeof customerId == 'undefined')) {
+                    connection.end();
+                    res.send(JSON.stringify({ status: 1 }));
+                }
+                else {
+                    if ((customerId.length != price.length) && (customerId.length != productId.length) && (price.length != productId.length)) {
+                        connection.end();
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Price, CustomerId มีจำนวนไม่เท่ากัน' }));
+                    }
+                    else {
+                        var insertQuery = "insert into customerproductprice (productid, customerid,`price`) values ";
+                        for (var i = 0; i < productId.length; i++) {
+                            var prodid = productId[i];
+                            var eachprice = price[i]
+                            var cusid = customerId[i];
+                            insertQuery += "(" + prodid + ", " + cusid + ", " + eachprice + ")";
+                            if (i != productId.length - 1) insertQuery += ",";
+                        }
+                        connection.query(insertQuery, function (error, valueRow) {
+                            if (error) {
+                                connection.end();
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot add new purchase to order.' }));
+                            }
+                            else {
+                                res.send(JSON.stringify({ status: 1}));
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    });
+});
+
+app.post('/UpdateCustomerProductPrice', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var price = json.price;
+    var customerProductPriceId = json.customerProductPriceId;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                if ((typeof price == 'undefined') || (typeof customerProductPriceId == 'undefined')) {
+                    connection.end();
+                    res.send(JSON.stringify({ status: 1 }));
+                }
+                else {
+                    if (customerProductPriceId.length != price.length) {
+                        connection.end();
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'CustomerProductPriceId, Price มีจำนวนไม่เท่ากัน' }));
+                    }
+                    else {
+                        let connection = mysql.createConnection({
+                            host: 'localhost',
+                            user: 'root',
+                            password: 'Password@1',
+                            database: 'factory'
+                        });
+                        var query = "update `customerproductprice` set `price` = case id ";
+                        for (var i = 0; i < price.length; i++) {
+                            query += "when " + customerProductPriceId[i] + " then `price` + " + price[i] + " ";
+                        }
+                        query += "else `price` end";
+                        connection.query(query, function (error, rows) {
+                            connection.end();
+                            if (error) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            }
+                            else {
+                                res.send(JSON.stringify({ status: 1 }));
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    });
+});
+
+app.post('/DeleteCustomerProductPrice', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerProductPriceId = json.customerProductPriceId;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "delete from `customerproductprice` where id = " + customerProductPriceId + ";";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1 }));
                     }
                 });
             }
