@@ -59,7 +59,7 @@ DROP TABLE IF EXISTS `customerproductprice`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `customerproductprice` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `ProductId` int(11) NOT NULL,
   `CustomerId` int(11) NOT NULL,
   `price` int(11) NOT NULL,
@@ -355,4 +355,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-07-10 21:56:34
+-- Dump completed on 2017-07-15 21:57:43

@@ -59,23 +59,23 @@ app.post('/GetRegionList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 connection.query("select * from region", function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                         }
                     }
                 });
@@ -95,23 +95,23 @@ app.post('/GetMaterialTypeList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 connection.query("select * from materialtype", function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                         }
                     }
                 });
@@ -142,17 +142,17 @@ app.post('/Register', function (req, res) {
         else {
             if (rows.length > 0) {
                 connection.end();
-                res.send(JSON.stringify({ status: 0, errorMessage: "This username already has registered." }))
+                res.send(JSON.stringify({ status: 0, errorMessage: "ชื่อผู้ใช้งานนี้ได้ใช้ลงทะเบียนไปแล้ว" }))
             }
             else {
                 connection.query(insertQuery, function (error, rows) {
                     connection.end();
-                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: error }))
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: "เกิดความผิดพลาดกับเดต้าเบส" }))
                     try {
                         res.send(JSON.stringify({ status: 1 }));
                     }
                     catch (err) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: "Cannot register." }))
+                        res.send(JSON.stringify({ status: 0, errorMessage: "เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถสมัครสมาชิกได้" }))
                     }
                 });
             }
@@ -174,7 +174,7 @@ app.post('/Login', function (req, res) {
     connection.query(query, function (error, rows) {
         if (error) {
             connection.end();
-            res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }))
+            res.send(JSON.stringify({ status: 0, errorMessage: "เกิดความผิดพลาดกับเดต้าเบส" }))
         }
         else {
             if ((typeof rows != 'undefined') && (rows.length > 0)) {
@@ -183,18 +183,18 @@ app.post('/Login', function (req, res) {
                     var updateAuthenToken = "update employee set AuthenToken ='" + token + "' where id=" + rows[0].id;
                     connection.query(updateAuthenToken, function (error, ans) {
                         connection.end();
-                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }));
+                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "เกิดความผิดพลาดกับเดต้าเบส" }));
                         else res.send(JSON.stringify({ status: 1, token: token, isAdmin: rows[0].isadmin, id: rows[0].id }));
                     });
                 }
                 else {
                     connection.end();
-                    res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }))
+                    res.send(JSON.stringify({ status: 0, errorMessage: "เกิดความผิดพลาดกับเดต้าเบส" }))
                 }
             }
             else {
                 connection.end();
-                res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }))
+                res.send(JSON.stringify({ status: 0, errorMessage: "เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบความถูกต้องของชื่อผู้ใช้ และรหัสผ่าน" }))
             }
         }
     });
@@ -213,7 +213,7 @@ app.get('/Logout', function (req, res) {
     });
     connection.query(query, function (error, rows) {
         connection.end();
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "Login fail, please check your username and password." }))
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "เกิดความผิดพลาดกับเดต้าเบส ออกจากระบบไม่สำเร็จ" }))
         else res.send({ status: 1 })
     });
 });
@@ -277,23 +277,23 @@ app.post('/GetProductList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 connection.query(queryGetProductList, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำรายการสินค้าออกมาได้' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำรายการสินค้าออกมาได้' }));
                         }
                     }
                 });
@@ -315,20 +315,20 @@ app.post('/GetProductById', function (req, res) {
     });
     isLogin(userId, token, function (error, ans) {
         if (error) {
-            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         }
         else {
             if (ans) {
                 connection.query('Select * from product where id=' + productId, function (error, rows) {
                     connection.end();
-                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำรายละเอียดสินค้าออกมาได้' }));
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
                     }
                 });
             }
             else {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำรายละเอียดสินค้าออกมาได้' }));
             }
         }
 
@@ -344,10 +344,10 @@ app.post('/AddNewProduct', function (req, res) {
     var productTypeId = json.productTypeId;
     var productAmount = json.productAmount;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 if (req.files.uploadfile != null) {
@@ -367,7 +367,7 @@ app.post('/AddNewProduct', function (req, res) {
                     connection.query(query, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                         }
                         else {
                             var file = req.files.uploadfile,
@@ -380,7 +380,7 @@ app.post('/AddNewProduct', function (req, res) {
                             connection.query(insertImageUrl, function (error, valueRow) {
                                 if (error) {
                                     connection.end();
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                                 }
                                 else {
                                     file.mv(absolutepath, function (err) {
@@ -393,7 +393,7 @@ app.post('/AddNewProduct', function (req, res) {
                                             connection.query(selectQuery, function (error, valueRow) {
                                                 connection.end();
                                                 if (error) {
-                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                                 }
                                                 else {
                                                     res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -423,14 +423,14 @@ app.post('/AddNewProduct', function (req, res) {
                     connection.query(query, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                         }
                         else {
                             var selectQuery = "select * from product where id = " + rows['insertId'];
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                 }
                                 else {
                                     res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -455,10 +455,10 @@ app.post('/UpdateProduct', function (req, res) {
     var productTypeId = json.productTypeId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     if (req.files.uploadfile != null) {
@@ -482,7 +482,7 @@ app.post('/UpdateProduct', function (req, res) {
                                 var oldImageUrl = "";
                                 connection.query(getImageUrlQuery, function (error, rows) {
                                     if (error) {
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                     }
                                     else {
                                         oldImageUrl = rows[0].ImageUrl;
@@ -503,14 +503,14 @@ app.post('/UpdateProduct', function (req, res) {
                                 connection.query(query, function (error, rows) {
                                     if (error) {
                                         connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                                     }
                                     else {
                                         var selectQuery = "select * from product where id = " + productId;
                                         connection.query(selectQuery, function (error, valueRow) {
                                             connection.end();
                                             if (error) {
-                                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                             }
                                             else {
                                                 res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -538,14 +538,14 @@ app.post('/UpdateProduct', function (req, res) {
                         connection.query(query, function (error, rows) {
                             if (error) {
                                 connection.end();
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                             }
                             else {
                                 var selectQuery = "select * from product where id = " + productId;
                                 connection.query(selectQuery, function (error, valueRow) {
                                     connection.end();
                                     if (error) {
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                     }
                                     else {
                                         res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -559,7 +559,7 @@ app.post('/UpdateProduct', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -577,7 +577,7 @@ app.post('/AddProductAmount', function (req, res) {
     });
     isLogin(userId, token, function (error, ans) {
         if (error) {
-            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         }
         else {
             if (ans) {
@@ -596,10 +596,10 @@ app.post('/AddProductAmount', function (req, res) {
                         else updateAmount += "else p1.amount end;";
                     }
                     connection.query(insert, function (error, rows) {
-                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
+                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่ม product transaction ได้' }));
                         else {
                             connection.query(updateAmount, function (error, rows) {
-                                if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred in database.' }));
+                                if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่ม product transaction ได้' }));
                                 else {
                                     res.send(JSON.stringify({ status: 1 }));
                                 }
@@ -609,7 +609,7 @@ app.post('/AddProductAmount', function (req, res) {
                 }
             }
             else {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
         }
     });
@@ -623,10 +623,10 @@ app.post('/SearchProduct', function (req, res) {
     var productName = json.productName;
     var productTypeId = json.productTypeId;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -643,7 +643,7 @@ app.post('/SearchProduct', function (req, res) {
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถค้นหาได้' }));
                     }
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
@@ -662,10 +662,10 @@ app.post('/DeleteProduct', function (req, res) {
     var productId = json.productId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -678,7 +678,7 @@ app.post('/DeleteProduct', function (req, res) {
                     var oldImageUrl = "";
                     connection.query(getImageUrlQuery, function (error, rows) {
                         if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบสินค้าได้' }));
                         }
                         else {
                             oldImageUrl = rows[0].ImageUrl;
@@ -690,7 +690,7 @@ app.post('/DeleteProduct', function (req, res) {
                     connection.query(query, function (error, rows) {
                         connection.end();
                         if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบสินค้าได้' }));
                         }
                         else {
                             res.send(JSON.stringify({ status: 1 }));
@@ -701,7 +701,7 @@ app.post('/DeleteProduct', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -716,24 +716,24 @@ app.post('/GetProductTypeList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 var query = "select * from producttype where id <> 1";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงประเภทสินค้าได้' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงประเภทสินค้าได้' }));
                         }
                     }
                 });
@@ -755,20 +755,20 @@ app.post('/GetProductTypeById', function (req, res) {
     });
     isLogin(userId, token, function (error, ans) {
         if (error) {
-            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         }
         else {
             if (ans) {
                 connection.query('Select * from producttype where id=' + productTypeId, function (error, rows) {
                     connection.end();
-                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงประเภทสินค้าได้' }));
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
                     }
                 });
             }
             else {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงประเภทสินค้าได้' }));
             }
         }
 
@@ -781,10 +781,10 @@ app.post('/AddNewProductType', function (req, res) {
     var token = json.token;
     var productTypeName = json.productTypeName;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -800,14 +800,14 @@ app.post('/AddNewProductType', function (req, res) {
                 connection.query(query, function (error, rows) {
                     if (error) {
                         connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
                     }
                     else {
                         var selectQuery = "select * from producttype where id = " + rows['insertId'];
                         connection.query(selectQuery, function (error, valueRow) {
                             connection.end();
                             if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
                             }
                             else {
                                 res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -829,10 +829,10 @@ app.post('/UpdateProductType', function (req, res) {
     var productTypeId = json.productTypeId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -849,14 +849,14 @@ app.post('/UpdateProductType', function (req, res) {
                     connection.query(query, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขประเภทสินค้าได้' }));
                         }
                         else {
                             var selectQuery = "select * from producttype where id = " + productTypeId;
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขประเภทสินค้าได้' }));
                                 }
                                 else {
                                     res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -869,7 +869,7 @@ app.post('/UpdateProductType', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -881,10 +881,10 @@ app.post('/DeleteProductType', function (req, res) {
     var productTypeId = json.productTypeId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -897,13 +897,13 @@ app.post('/DeleteProductType', function (req, res) {
                     connection.query(query, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบประเภทสินค้าได้' }));
                         }
                         else {
                             var updateQuery = "update product set producttypeid = 1 where producttypeid = " + productTypeId;
                             connection.query(query, function (error, rows) {
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบประเภทสินค้าได้' }));
                                 }
                                 else {
                                     res.send(JSON.stringify({ status: 1 }));
@@ -916,7 +916,7 @@ app.post('/DeleteProductType', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -931,24 +931,24 @@ app.post('/GetMaterialList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 var query = "select * from material";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงวัตถุดิบได้' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงวัตถุดิบได้' }));
                         }
                     }
                 });
@@ -970,20 +970,20 @@ app.post('/GetMaterialById', function (req, res) {
     });
     isLogin(userId, token, function (error, ans) {
         if (error) {
-            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         }
         else {
             if (ans) {
                 connection.query('Select * from material where id=' + materialId, function (error, rows) {
                     connection.end();
-                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดวัตถุดิบได้' }));
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
                     }
                 });
             }
             else {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดวัตถุดิบได้' }));
             }
         }
 
@@ -998,10 +998,10 @@ app.post('/AddNewMaterial', function (req, res) {
     var materialTypeId = json.materialTypeId;
     var materialAmount = json.materialAmount;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -1019,14 +1019,14 @@ app.post('/AddNewMaterial', function (req, res) {
                 connection.query(query, function (error, rows) {
                     if (error) {
                         connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มวัตถุดิบได้' }));
                     }
                     else {
                         var selectQuery = "select * from material where id = " + rows['insertId'];
                         connection.query(selectQuery, function (error, valueRow) {
                             connection.end();
                             if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มวัตถุดิบได้' }));
                             }
                             else {
                                 res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -1050,10 +1050,10 @@ app.post('/UpdateMaterial', function (req, res) {
     var materialAmount = json.materialAmount;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -1072,14 +1072,14 @@ app.post('/UpdateMaterial', function (req, res) {
                     connection.query(query, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดวัตถุดิบได้' }));
                         }
                         else {
                             var selectQuery = "select * from material where id = " + materialId;
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดวัตถุดิบได้' }));
                                 }
                                 else {
                                     res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -1092,7 +1092,7 @@ app.post('/UpdateMaterial', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -1104,10 +1104,10 @@ app.post('/SearchMaterial', function (req, res) {
     var materialName = json.materialName;
     var materialTypeId = json.materialTypeId;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -1124,7 +1124,7 @@ app.post('/SearchMaterial', function (req, res) {
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส  ไม่สามารถค้นหาได้' }));
                     }
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
@@ -1143,10 +1143,10 @@ app.post('/DeleteMaterial', function (req, res) {
     var materialId = json.materialId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -1158,7 +1158,7 @@ app.post('/DeleteMaterial', function (req, res) {
                     var query = "delete from material where id = " + materialId;
                     connection.query(query, function (error, rows) {
                         if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบวัตถุดิบได้' }));
                         }
                         else {
                             res.send(JSON.stringify({ status: 1 }));
@@ -1169,7 +1169,7 @@ app.post('/DeleteMaterial', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -1184,24 +1184,24 @@ app.post('/GetCustomerList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 var query = "select * from customer";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายชื่อลูกค้าได้' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายชื่อลูกค้าได้' }));
                         }
                     }
                 });
@@ -1223,20 +1223,20 @@ app.post('/GetCustomerById', function (req, res) {
     });
     isLogin(userId, token, function (error, ans) {
         if (error) {
-            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         }
         else {
             if (ans) {
                 connection.query('Select * from customer where id=' + customerId, function (error, rows) {
                     connection.end();
-                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
                     }
                 });
             }
             else {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
             }
         }
 
@@ -1259,10 +1259,10 @@ app.post('/AddNewCustomer', function (req, res) {
     var transporterPhone = json.transporterPhone;
     var credit = json.credit;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -1290,14 +1290,14 @@ app.post('/AddNewCustomer', function (req, res) {
                 connection.query(query, function (error, rows) {
                     if (error) {
                         connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มลูกค้าใหม่ได้' }));
                     }
                     else {
                         var selectQuery = "select * from customer where id = " + rows['insertId'];
                         connection.query(selectQuery, function (error, valueRow) {
                             connection.end();
                             if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
                             }
                             else {
                                 res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -1329,10 +1329,10 @@ app.post('/UpdateCustomer', function (req, res) {
     var credit = json.credit;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -1358,7 +1358,7 @@ app.post('/UpdateCustomer', function (req, res) {
                     connection.query(query, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายละเอียดลูกค้าได้' }));
                         }
                         else {
 
@@ -1366,7 +1366,7 @@ app.post('/UpdateCustomer', function (req, res) {
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot display new product.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
                                 }
                                 else {
                                     res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -1379,7 +1379,7 @@ app.post('/UpdateCustomer', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -1391,10 +1391,10 @@ app.post('/SearchCustomer', function (req, res) {
     var customerName = json.customerName;
     var regionId = json.regionId;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 if ((typeof customerId !== 'undefined') && (typeof customerName !== 'undefined') && (typeof regionId !== 'undefined')) {
@@ -1412,7 +1412,7 @@ app.post('/SearchCustomer', function (req, res) {
                     connection.query(query, function (error, rows) {
                         connection.end();
                         if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส  ไม่สามารถค้นหาได้' }));
                         }
                         else {
                             res.send(JSON.stringify({ status: 1, data: rows }));
@@ -1420,7 +1420,7 @@ app.post('/SearchCustomer', function (req, res) {
                     });
                 }
                 else {
-                    res.send(JSON.stringify({ status: 0, data: 'Input should not be undefined.' }));
+                    res.send(JSON.stringify({ status: 0, data: 'ข้อมูลในการค้นหาไม่ครบ' }));
                 }
             }
         }
@@ -1435,10 +1435,10 @@ app.post('/DeleteCustomer', function (req, res) {
     var customerId = json.customerId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -1450,7 +1450,7 @@ app.post('/DeleteCustomer', function (req, res) {
                     var query = "delete from customer where id = " + customerId;
                     connection.query(query, function (error, rows) {
                         if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบลูกค้าได้' }));
                         }
                         else {
                             res.send(JSON.stringify({ status: 1 }));
@@ -1461,7 +1461,7 @@ app.post('/DeleteCustomer', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -1476,24 +1476,24 @@ app.post('/GetOrderList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 var query = "select o.id id, o.`datetime` datetime,c.credit credit, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id left join orderdetails od on o.id = od.orderid group by o.id order by datetime";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงคำสั่งซื้อได้' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงคำสั่งซื้อได้' }));
                         }
                     }
                 });
@@ -1515,21 +1515,21 @@ app.post('/GetOrderById', function (req, res) {
     });
     isLogin(userId, token, function (error, ans) {
         if (error) {
-            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         }
         else {
             if (ans) {
                 var query = 'Select * from `order` as o left join orderdetails od on o.id = od.orderid where o.id=' + orderId;
                 connection.query(query, function (error, rows) {
                     connection.end();
-                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดคำสั่งซื้อได้' }));
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
                     }
                 });
             }
             else {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดคำสั่งซื้อได้' }));
             }
         }
 
@@ -1545,10 +1545,10 @@ app.post('/AddNewOrder', function (req, res) {
     var amount = json.amount;
     var priceperpiece = json.priceperpiece;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -1564,7 +1564,7 @@ app.post('/AddNewOrder', function (req, res) {
                 connection.query(query, function (error, rows) {
                     if (error) {
                         connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มคำสั่งซท้อใหม่ได้' }));
                     }
                     else {
                         if ((typeof productId == 'undefined')
@@ -1593,13 +1593,13 @@ app.post('/AddNewOrder', function (req, res) {
                                 connection.query(insertQuery, function (error, valueRow) {
                                     if (error) {
                                         connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot add new purchase to order.' }));
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการสั่งซื้อในคำสั่งซื้อได้' }));
                                     }
                                     else {
                                         connection.query(updateQuery, function (error, valueRow) {
                                             connection.end();
                                             if (error) {
-                                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update product amount to Product table.' }));
+                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
                                             }
                                             else {
                                                 res.send(JSON.stringify({ status: 1 }));
@@ -1616,20 +1616,6 @@ app.post('/AddNewOrder', function (req, res) {
     });
 });
 
-function DeleteOrderDetailsByOrderId(orderId, callback) {
-    var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
-    connection.query(deleteOrderdetails, function (error, rows) {
-        if (error) {
-            callback(error, false);
-            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when delete orderdetails.' }));
-        }
-        else {
-            res.send(JSON.stringify({ status: 1 }));
-        }
-    });
-
-}
-
 app.post('/EditOrder', function (req, res) {
     var json = req.body;
     var userId = json.userId;
@@ -1643,10 +1629,10 @@ app.post('/EditOrder', function (req, res) {
     var amount = json.amount;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -1660,7 +1646,7 @@ app.post('/EditOrder', function (req, res) {
                     connection.query(getOrderDetails, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when getOrderDetails.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                         }
                         else {
                             if (rows.length > 0) {
@@ -1676,7 +1662,7 @@ app.post('/EditOrder', function (req, res) {
                                 connection.query(query, function (error, rows) {
                                     if (error) {
                                         connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when update order.' }));
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส เกิดความผิดพลาดกับเดต้าเบส' }));
                                     }
                                     else {
                                         if ((typeof orderDetailId == 'undefined')
@@ -1687,7 +1673,7 @@ app.post('/EditOrder', function (req, res) {
                                             connection.query(deleteOrderdetails, function (error, rows) {
                                                 connection.end();
                                                 if (error) {
-                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when delete orderdetails.' }));
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
                                                 }
                                                 else {
                                                     res.send(JSON.stringify({ status: 1 }));
@@ -1712,7 +1698,7 @@ app.post('/EditOrder', function (req, res) {
                                                 connection.query(updateQuery, function (error, rows) {
                                                     if (error) {
                                                         connection.end();
-                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when update old product amount.' }));
+                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
                                                     }
                                                     else {
                                                         for (var i = 0; i < orderDetailId.length; i++) {
@@ -1733,19 +1719,19 @@ app.post('/EditOrder', function (req, res) {
                                                         connection.query(minusQuery, function (error, valueRow) {
                                                             if (error) {
                                                                 connection.end();
-                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update product amount in product.' }));
+                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
                                                             }
                                                             else {
                                                                 connection.query(deleteQuery, function (error, valueRow) {
                                                                     if (error) {
                                                                         connection.end();
-                                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update purchase in order.' }));
+                                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
                                                                     }
                                                                     else {
                                                                         connection.query(updateNewProductQuery, function (error, valueRow) {
                                                                             connection.end();
                                                                             if (error) {
-                                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update purchase in order.' }));
+                                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
                                                                             }
                                                                             else {
                                                                                 res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -1771,7 +1757,7 @@ app.post('/EditOrder', function (req, res) {
                                 connection.query(query, function (error, rows) {
                                     if (error) {
                                         connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when update order.' }));
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขคำสั่งซื้อได้' }));
                                     }
                                     else {
                                         if ((typeof orderDetailId == 'undefined')
@@ -1782,7 +1768,7 @@ app.post('/EditOrder', function (req, res) {
                                             connection.query(deleteOrderdetails, function (error, rows) {
                                                 connection.end();
                                                 if (error) {
-                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database when delete orderdetails.' }));
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
                                                 }
                                                 else {
                                                     res.send(JSON.stringify({ status: 1 }));
@@ -1817,13 +1803,13 @@ app.post('/EditOrder', function (req, res) {
                                                 connection.query(minusQuery, function (error, valueRow) {
                                                     if (error) {
                                                         connection.end();
-                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update product amount in product.' }));
+                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
                                                     }
                                                     else {
                                                         connection.query(updateQuery, function (error, valueRow) {
                                                             connection.end();
                                                             if (error) {
-                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot update purchase in order.' }));
+                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการสั่งซื้อในคำสั่งซื้อได้' }));
                                                             }
                                                             else {
                                                                 res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -1843,7 +1829,7 @@ app.post('/EditOrder', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -1855,10 +1841,10 @@ app.post('/DeleteOrder', function (req, res) {
     var orderId = json.orderId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -1873,7 +1859,7 @@ app.post('/DeleteOrder', function (req, res) {
                     connection.query(getPurchase, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                         }
                         else {
                             if (rows.length > 0) {
@@ -1884,13 +1870,13 @@ app.post('/DeleteOrder', function (req, res) {
                                 connection.query(updateQuery, function (error, rows) {
                                     if (error) {
                                         connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                                     }
                                     else {
                                         connection.query(query, function (error, rows) {
                                             connection.end();
                                             if (error) {
-                                                res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบคำสั่งซื้อได้' }));
                                             }
                                             else {
                                                 res.send(JSON.stringify({ status: 1 }));
@@ -1903,7 +1889,7 @@ app.post('/DeleteOrder', function (req, res) {
                                 connection.query(query, function (error, rows) {
                                     connection.end();
                                     if (error) {
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบคำสั่งซื้อได้' }));
                                     }
                                     else {
                                         res.send(JSON.stringify({ status: 1 }));
@@ -1917,7 +1903,7 @@ app.post('/DeleteOrder', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -1930,10 +1916,10 @@ app.post('/SearchOrder', function (req, res) {
     var regionId = json.regionId;
     var transactionDate = json.transactionDate;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -1951,7 +1937,7 @@ app.post('/SearchOrder', function (req, res) {
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถค้นหาได้' }));
                     }
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
@@ -1972,10 +1958,10 @@ app.post('/AddNewPurchase', function (req, res) {
     var amount = json.amount;
     var productId = json.productId;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -1997,13 +1983,13 @@ app.post('/AddNewPurchase', function (req, res) {
                 connection.query(query, function (error, rows) {
                     if (error) {
                         connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการซื้อได้' }));
                     }
                     else {
                         connection.query(updateQuery, function (error, rows) {
                             connection.end();
                             if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการซื้อได้' }));
                             }
                             else {
                                 res.send(JSON.stringify({ status: 1 }));
@@ -2026,10 +2012,10 @@ app.post('/EditPurchase', function (req, res) {
     var orderdetailsId = json.orderdetailsId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -2043,13 +2029,13 @@ app.post('/EditPurchase', function (req, res) {
                     connection.query(updateQuery, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการซื้อได้' }));
                         }
                         else {
                             connection.query(query, function (error, rows) {
                                 connection.end();
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการซื้อได้' }));
                                 }
                                 else {
                                     res.send(JSON.stringify({ status: 1 }));
@@ -2062,7 +2048,7 @@ app.post('/EditPurchase', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -2074,10 +2060,10 @@ app.post('/DeletePurchase', function (req, res) {
     var orderdetailsId = json.orderdetailsId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                    res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
                     let connection = mysql.createConnection({
@@ -2091,13 +2077,13 @@ app.post('/DeletePurchase', function (req, res) {
                     connection.query(updateQuery, function (error, rows) {
                         if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการซื้อได้' }));
                         }
                         else {
                             connection.query(query, function (error, rows) {
                                 connection.end();
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการซื้อได้' }));
                                 }
                                 else {
                                     res.send(JSON.stringify({ status: 1 }));
@@ -2110,7 +2096,7 @@ app.post('/DeletePurchase', function (req, res) {
         });
     }
     else {
-        res.send(JSON.stringify({ status: 0, errorMessage: "You are not admin." }));
+        res.send(JSON.stringify({ status: 0, errorMessage: "คุณไม่ใช่แอ็ดมิน" }));
     }
 });
 
@@ -2122,10 +2108,10 @@ app.post('/AddNewMaterialTransaction', function (req, res) {
     var acquire = json.acquire;
     var use = json.use;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -2147,13 +2133,13 @@ app.post('/AddNewMaterialTransaction', function (req, res) {
                 connection.query(insertQuery, function (error, rows) {
                     if (error) {
                         connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                     }
                     else {
                         connection.query(updateQuery, function (error, rows) {
                             connection.end();
                             if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                             }
                             else {
                                 res.send(JSON.stringify({ status: 1 }));
@@ -2177,24 +2163,24 @@ app.post('/GetMaterialTransactionList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 var query = 'select * from materialtransaction';
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                         }
                     }
                 });
@@ -2209,10 +2195,10 @@ app.post('/SearchMaterialTransaction', function (req, res) {
     var token = json.token;
     var transactionDate = json.transactionDate;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -2227,7 +2213,7 @@ app.post('/SearchMaterialTransaction', function (req, res) {
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถค้นหาได้' }));
                     }
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
@@ -2249,24 +2235,24 @@ app.post('/GetProductTransactionList', function (req, res) {
         database: 'factory'
     });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 var query = 'select * from producttransaction order by transactiondate';
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                     }
                     else {
                         if (typeof rows !== 'undefined') {
                             res.send(JSON.stringify({ status: 1, data: rows }));
                         }
                         else {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                         }
                     }
                 });
@@ -2281,10 +2267,10 @@ app.post('/SearchProductTransaction', function (req, res) {
     var token = json.token;
     var transactionDate = json.transactionDate;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -2299,7 +2285,7 @@ app.post('/SearchProductTransaction', function (req, res) {
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถค้นหาได้' }));
                     }
                     else {
                         res.send(JSON.stringify({ status: 1, data: rows }));
@@ -2317,37 +2303,40 @@ app.post('/AddNewCustomerProductPrice', function (req, res) {
     var customerId = json.customerId;
     var price = json.price;
     var productId = json.productId;
+    let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 if ((typeof price == 'undefined')
-                    || (typeof priceperpiece == 'undefined')
-                    || (typeof customerId == 'undefined')) {
-                    connection.end();
+                    || (typeof productId == 'undefined')) {
                     res.send(JSON.stringify({ status: 1 }));
                 }
                 else {
-                    if ((customerId.length != price.length) && (customerId.length != productId.length) && (price.length != productId.length)) {
+                    if (price.length != productId.length) {
                         connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Price, CustomerId มีจำนวนไม่เท่ากัน' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Price มีจำนวนไม่เท่ากัน' }));
                     }
                     else {
                         var insertQuery = "insert into customerproductprice (productid, customerid,`price`) values ";
                         for (var i = 0; i < productId.length; i++) {
                             var prodid = productId[i];
                             var eachprice = price[i]
-                            var cusid = customerId[i];
-                            insertQuery += "(" + prodid + ", " + cusid + ", " + eachprice + ")";
+                            insertQuery += "(" + prodid + ", " + customerId + ", " + eachprice + ")";
                             if (i != productId.length - 1) insertQuery += ",";
                         }
                         connection.query(insertQuery, function (error, valueRow) {
                             if (error) {
                                 connection.end();
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Cannot add new purchase to order.' }));
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเก็บราคาสินค้าของลูกค้าได้' }));
                             }
                             else {
                                 res.send(JSON.stringify({ status: 1}));
@@ -2367,19 +2356,17 @@ app.post('/UpdateCustomerProductPrice', function (req, res) {
     var price = json.price;
     var customerProductPriceId = json.customerProductPriceId;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 if ((typeof price == 'undefined') || (typeof customerProductPriceId == 'undefined')) {
-                    connection.end();
                     res.send(JSON.stringify({ status: 1 }));
                 }
                 else {
                     if (customerProductPriceId.length != price.length) {
-                        connection.end();
                         res.send(JSON.stringify({ status: 0, errorMessage: 'CustomerProductPriceId, Price มีจำนวนไม่เท่ากัน' }));
                     }
                     else {
@@ -2394,10 +2381,11 @@ app.post('/UpdateCustomerProductPrice', function (req, res) {
                             query += "when " + customerProductPriceId[i] + " then `price` + " + price[i] + " ";
                         }
                         query += "else `price` end";
+                        console.log(query);
                         connection.query(query, function (error, rows) {
                             connection.end();
                             if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขราคาสินค้าของลูกค้าได้' }));
                             }
                             else {
                                 res.send(JSON.stringify({ status: 1 }));
@@ -2416,10 +2404,10 @@ app.post('/DeleteCustomerProductPrice', function (req, res) {
     var token = json.token;
     var customerProductPriceId = json.customerProductPriceId;
     isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
             if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'Please login.' }));
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
                 let connection = mysql.createConnection({
@@ -2432,7 +2420,7 @@ app.post('/DeleteCustomerProductPrice', function (req, res) {
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'Error occurred on database.' }));
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบราคาสินค้าของลูกค้าได้' }));
                     }
                     else {
                         res.send(JSON.stringify({ status: 1 }));
