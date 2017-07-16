@@ -2008,7 +2008,7 @@ app.post('/SearchOrder', function (req, res) {
                 from `order` o join customer c on o.customerid = c.id \
                 where (('" + orderId + "' is null or '" + orderId + "' = '') or o.id = '" + orderId + "')\
                 and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name like '%" + customerName + "%')\
-                and date(mt.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s')\
+                and date(o.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s'))\
                 and (('" + regionId + "' is null or '" + regionId + "' = '') or c.regionId = '" + regionId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
