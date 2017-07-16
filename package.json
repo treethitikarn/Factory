@@ -16,6 +16,7 @@
     "forever-monitor": "^1.7.1",
     "fs": "0.0.1-security",
     "mysql": "^2.13.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "rwlock": "^5.0.0"
   }
 }
