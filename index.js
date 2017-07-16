@@ -7,6 +7,7 @@ var path = require('path');
 var fs = require('fs');
 var folderName = "/upload/";
 var uploadFolder = __dirname.replace(/\\/gi, '/') + folderName;
+var ReadWriteLock = require('rwlock');
 
 var queryGetProductList = 'SELECT * from product order by id';
 var queryGetProductById = 'Select * from product where id={0}';
@@ -211,11 +212,15 @@ app.get('/Logout', function (req, res) {
         password: 'Password@1',
         database: 'factory'
     });
-    connection.query(query, function (error, rows) {
-        connection.end();
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: "เกิดความผิดพลาดกับเดต้าเบส ออกจากระบบไม่สำเร็จ" }))
-        else res.send({ status: 1 })
+    var lock = new ReadWriteLock();
+    lock.writeLock(function (release) {
+        connection.query(query, function (error, rows) {
+            connection.end();
+            if (error) res.send(JSON.stringify({ status: 0, errorMessage: "เกิดความผิดพลาดกับเดต้าเบส ออกจากระบบไม่สำเร็จ" }))
+            else res.send({ status: 1 })
+        });
     });
+    release();
 });
 
 function isLogin(userId, token, callback) {
@@ -255,10 +260,14 @@ app.post('/ChangePassword', function (req, res) {
             password: 'Password@1',
             database: 'factory'
         });
-        connection.query(query, function (error, rows) {
-            connection.end();
-            if (error) res.send({ status: 0, errorMessage: "New password and re password are not the same." })
-            else res.send({ status: 1 })
+        var lock = new ReadWriteLock();
+        lock.writeLock(function (release) {
+            connection.query(query, function (error, rows) {
+                connection.end();
+                if (error) res.send({ status: 0, errorMessage: "New password and re password are not the same." })
+                else res.send({ status: 1 })
+            });
+            release();
         });
     }
     else {
@@ -343,6 +352,7 @@ app.post('/AddNewProduct', function (req, res) {
     var productCost = json.productCost;
     var productTypeId = json.productTypeId;
     var productAmount = json.productAmount;
+    var lock = new ReadWriteLock();
     isLogin(userId, token, function (error, ans) {
         if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
@@ -364,46 +374,49 @@ app.post('/AddNewProduct', function (req, res) {
                                         EmployeeId,\
                                         InsertedDate) \
                                         values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW());";
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
-                        }
-                        else {
-                            var file = req.files.uploadfile,
-                                filename = rows['insertId'] + '_' + file.name;
-                            var absolutepath = uploadFolder + filename;
-                            if (!fs.existsSync(uploadFolder)) {
-                                fs.mkdirSync(uploadFolder);
+                    lock.writeLock(function (release) {
+                        connection.query(query, function (error, rows) {
+                            if (error) {
+                                connection.end();
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                             }
-                            var insertImageUrl = "update product set imageurl = '" + absolutepath + "' where id = " + rows['insertId'];
-                            connection.query(insertImageUrl, function (error, valueRow) {
-                                if (error) {
-                                    connection.end();
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
+                            else {
+                                var file = req.files.uploadfile,
+                                    filename = rows['insertId'] + '_' + file.name;
+                                var absolutepath = uploadFolder + filename;
+                                if (!fs.existsSync(uploadFolder)) {
+                                    fs.mkdirSync(uploadFolder);
                                 }
-                                else {
-                                    file.mv(absolutepath, function (err) {
-                                        if (err) {
-                                            connection.end();
-                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
-                                        }
-                                        else {
-                                            var selectQuery = "select * from product where id = " + rows['insertId'];
-                                            connection.query(selectQuery, function (error, valueRow) {
+                                var insertImageUrl = "update product set imageurl = '" + absolutepath + "' where id = " + rows['insertId'];
+                                connection.query(insertImageUrl, function (error, valueRow) {
+                                    if (error) {
+                                        connection.end();
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
+                                    }
+                                    else {
+                                        file.mv(absolutepath, function (err) {
+                                            if (err) {
                                                 connection.end();
-                                                if (error) {
-                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
-                                                }
-                                                else {
-                                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                                }
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
+                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
+                                            }
+                                            else {
+                                                var selectQuery = "select * from product where id = " + rows['insertId'];
+                                                connection.query(selectQuery, function (error, valueRow) {
+                                                    connection.end();
+                                                    if (error) {
+                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
+                                                    }
+                                                    else {
+                                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
                 else {
@@ -420,23 +433,26 @@ app.post('/AddNewProduct', function (req, res) {
                                         EmployeeId,\
                                         InsertedDate) \
                                         values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW());";
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
-                        }
-                        else {
-                            var selectQuery = "select * from product where id = " + rows['insertId'];
-                            connection.query(selectQuery, function (error, valueRow) {
+                    lock.writeLock(function (release) {
+                        connection.query(query, function (error, rows) {
+                            if (error) {
                                 connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                }
-                            });
-                        }
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
+                            }
+                            else {
+                                var selectQuery = "select * from product where id = " + rows['insertId'];
+                                connection.query(selectQuery, function (error, valueRow) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
+                                    }
+                                    else {
+                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -461,38 +477,40 @@ app.post('/UpdateProduct', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    if (req.files.uploadfile != null) {
-                        var file = req.files.uploadfile,
-                            filename = productId + "_" + file.name;
-                        if (!fs.existsSync(uploadFolder)) {
-                            fs.mkdirSync(uploadFolder);
-                        }
-                        file.mv(uploadFolder + filename, function (err) {
-                            if (err) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        if (req.files.uploadfile != null) {
+                            var file = req.files.uploadfile,
+                                filename = productId + "_" + file.name;
+                            if (!fs.existsSync(uploadFolder)) {
+                                fs.mkdirSync(uploadFolder);
                             }
-                            else {
-                                let connection = mysql.createConnection({
-                                    host: 'localhost',
-                                    user: 'root',
-                                    password: 'Password@1',
-                                    database: 'factory'
-                                });
-                                var getImageUrlQuery = 'select ImageUrl from product where id = ' + productId;
-                                var oldImageUrl = "";
-                                connection.query(getImageUrlQuery, function (error, rows) {
-                                    if (error) {
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
-                                    }
-                                    else {
-                                        oldImageUrl = rows[0].ImageUrl;
-                                        var filePath = oldImageUrl;
-                                        if (fs.existsSync(filePath)) {
-                                            fs.unlinkSync(filePath);
+                            file.mv(uploadFolder + filename, function (err) {
+                                if (err) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
+                                }
+                                else {
+                                    let connection = mysql.createConnection({
+                                        host: 'localhost',
+                                        user: 'root',
+                                        password: 'Password@1',
+                                        database: 'factory'
+                                    });
+                                    var getImageUrlQuery = 'select ImageUrl from product where id = ' + productId;
+                                    var oldImageUrl = "";
+                                    connection.query(getImageUrlQuery, function (error, rows) {
+                                        if (error) {
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                         }
-                                    }
-                                });
-                                var query = "update product set \
+                                        else {
+                                            oldImageUrl = rows[0].ImageUrl;
+                                            var filePath = oldImageUrl;
+                                            if (fs.existsSync(filePath)) {
+                                                fs.unlinkSync(filePath);
+                                            }
+                                        }
+                                    });
+                                    var query = "update product set \
                                         Name = '" + productName + "',\
                                         ProductTypeId = " + productTypeId + ",\
                                         Cost = " + productCost + ",\
@@ -500,60 +518,62 @@ app.post('/UpdateProduct', function (req, res) {
                                         ImageUrl = '" + uploadFolder + filename + "',\
                                         InsertedDate = NOW() \
                                         where id = " + productId;
-                                connection.query(query, function (error, rows) {
-                                    if (error) {
-                                        connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
-                                    }
-                                    else {
-                                        var selectQuery = "select * from product where id = " + productId;
-                                        connection.query(selectQuery, function (error, valueRow) {
+                                    connection.query(query, function (error, rows) {
+                                        if (error) {
                                             connection.end();
-                                            if (error) {
-                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
-                                            }
-                                            else {
-                                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    else {
-                        let connection = mysql.createConnection({
-                            host: 'localhost',
-                            user: 'root',
-                            password: 'Password@1',
-                            database: 'factory'
-                        });
-                        var query = "update product set \
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
+                                        }
+                                        else {
+                                            var selectQuery = "select * from product where id = " + productId;
+                                            connection.query(selectQuery, function (error, valueRow) {
+                                                connection.end();
+                                                if (error) {
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
+                                                }
+                                                else {
+                                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        else {
+                            let connection = mysql.createConnection({
+                                host: 'localhost',
+                                user: 'root',
+                                password: 'Password@1',
+                                database: 'factory'
+                            });
+                            var query = "update product set \
                                         Name = '" + productName + "',\
                                         ProductTypeId = " + productTypeId + ",\
                                         Cost = " + productCost + ",\
                                         EmployeeId = " + userId + ",\
                                         InsertedDate = NOW() \
                                         where id = " + productId;
-                        connection.query(query, function (error, rows) {
-                            if (error) {
-                                connection.end();
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
-                            }
-                            else {
-                                var selectQuery = "select * from product where id = " + productId;
-                                connection.query(selectQuery, function (error, valueRow) {
+                            connection.query(query, function (error, rows) {
+                                if (error) {
                                     connection.end();
-                                    if (error) {
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
-                                    }
-                                    else {
-                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                    }
-                                });
-                            }
-                        });
-                    }
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
+                                }
+                                else {
+                                    var selectQuery = "select * from product where id = " + productId;
+                                    connection.query(selectQuery, function (error, valueRow) {
+                                        connection.end();
+                                        if (error) {
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
+                                        }
+                                        else {
+                                            res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        release();
+                    });
                 }
             }
         });
@@ -595,16 +615,20 @@ app.post('/AddProductAmount', function (req, res) {
                         if (i != productAmount.length - 1) insert += ",";
                         else updateAmount += "else p1.amount end;";
                     }
-                    connection.query(insert, function (error, rows) {
-                        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่ม product transaction ได้' }));
-                        else {
-                            connection.query(updateAmount, function (error, rows) {
-                                if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่ม product transaction ได้' }));
-                                else {
-                                    res.send(JSON.stringify({ status: 1 }));
-                                }
-                            });
-                        }
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(insert, function (error, rows) {
+                            if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่ม product transaction ได้' }));
+                            else {
+                                connection.query(updateAmount, function (error, rows) {
+                                    if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่ม product transaction ได้' }));
+                                    else {
+                                        res.send(JSON.stringify({ status: 1 }));
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -676,25 +700,29 @@ app.post('/DeleteProduct', function (req, res) {
                     });
                     var getImageUrlQuery = 'select ImageUrl from product where id = ' + productId;
                     var oldImageUrl = "";
-                    connection.query(getImageUrlQuery, function (error, rows) {
-                        if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบสินค้าได้' }));
-                        }
-                        else {
-                            oldImageUrl = rows[0].ImageUrl;
-                            var filePath = oldImageUrl;
-                            fs.unlinkSync(filePath);
-                        }
-                    });
-                    var query = "delete from product where id = " + productId;
-                    connection.query(query, function (error, rows) {
-                        connection.end();
-                        if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบสินค้าได้' }));
-                        }
-                        else {
-                            res.send(JSON.stringify({ status: 1 }));
-                        }
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(getImageUrlQuery, function (error, rows) {
+                            if (error) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบสินค้าได้' }));
+                            }
+                            else {
+                                oldImageUrl = rows[0].ImageUrl;
+                                var filePath = oldImageUrl;
+                                fs.unlinkSync(filePath);
+                            }
+                        });
+                        var query = "delete from product where id = " + productId;
+                        connection.query(query, function (error, rows) {
+                            connection.end();
+                            if (error) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบสินค้าได้' }));
+                            }
+                            else {
+                                res.send(JSON.stringify({ status: 1 }));
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -722,7 +750,7 @@ app.post('/GetProductTypeList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                var query = "select * from producttype where id <> 1";
+                var query = "select * from producttype";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -797,23 +825,27 @@ app.post('/AddNewProductType', function (req, res) {
                                         EmployeeId,\
                                         `datetime`) \
                                         values('" + productTypeName + "'," + userId + ", NOW());";
-                connection.query(query, function (error, rows) {
-                    if (error) {
-                        connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
-                    }
-                    else {
-                        var selectQuery = "select * from producttype where id = " + rows['insertId'];
-                        connection.query(selectQuery, function (error, valueRow) {
+                var lock = new ReadWriteLock();
+                lock.writeLock(function (release) {
+                    connection.query(query, function (error, rows) {
+                        if (error) {
                             connection.end();
-                            if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
-                            }
-                            else {
-                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                            }
-                        });
-                    }
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
+                        }
+                        else {
+                            var selectQuery = "select * from producttype where id = " + rows['insertId'];
+                            connection.query(selectQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                }
+                            });
+                        }
+                    });
+                    release();
                 });
             }
         }
@@ -846,23 +878,27 @@ app.post('/UpdateProductType', function (req, res) {
                                         EmployeeId = " + userId + ",\
                                         `datetime` = NOW() \
                                         where id = " + productTypeId;
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขประเภทสินค้าได้' }));
-                        }
-                        else {
-                            var selectQuery = "select * from producttype where id = " + productTypeId;
-                            connection.query(selectQuery, function (error, valueRow) {
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(query, function (error, rows) {
+                            if (error) {
                                 connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขประเภทสินค้าได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                }
-                            });
-                        }
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขประเภทสินค้าได้' }));
+                            }
+                            else {
+                                var selectQuery = "select * from producttype where id = " + productTypeId;
+                                connection.query(selectQuery, function (error, valueRow) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขประเภทสินค้าได้' }));
+                                    }
+                                    else {
+                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -894,22 +930,27 @@ app.post('/DeleteProductType', function (req, res) {
                         database: 'factory'
                     });
                     var query = "delete from producttype where id = " + productTypeId;
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบประเภทสินค้าได้' }));
-                        }
-                        else {
-                            var updateQuery = "update product set producttypeid = 1 where producttypeid = " + productTypeId;
-                            connection.query(query, function (error, rows) {
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบประเภทสินค้าได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1 }));
-                                }
-                            });
-                        }
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(query, function (error, rows) {
+                            if (error) {
+                                connection.end();
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบประเภทสินค้าได้' }));
+                            }
+                            else {
+                                var updateQuery = "update product set producttypeid = 1 where producttypeid = " + productTypeId;
+                                connection.query(updateQuery, function (error, rows) {
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบประเภทสินค้าได้' }));
+                                    }
+                                    else {
+                                        console.log(updateQuery);
+                                        res.send(JSON.stringify({ status: 1 }));
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -1016,23 +1057,27 @@ app.post('/AddNewMaterial', function (req, res) {
                                         EmployeeId,\
                                         `datetime`) \
                                         values('" + materialName + "', " + materialTypeId + "," + materialAmount + "," + userId + ", NOW());";
-                connection.query(query, function (error, rows) {
-                    if (error) {
-                        connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มวัตถุดิบได้' }));
-                    }
-                    else {
-                        var selectQuery = "select * from material where id = " + rows['insertId'];
-                        connection.query(selectQuery, function (error, valueRow) {
+                var lock = new ReadWriteLock();
+                lock.writeLock(function (release) {
+                    connection.query(query, function (error, rows) {
+                        if (error) {
                             connection.end();
-                            if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มวัตถุดิบได้' }));
-                            }
-                            else {
-                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                            }
-                        });
-                    }
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มวัตถุดิบได้' }));
+                        }
+                        else {
+                            var selectQuery = "select * from material where id = " + rows['insertId'];
+                            connection.query(selectQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มวัตถุดิบได้' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                }
+                            });
+                        }
+                    });
+                    release();
                 });
             }
         }
@@ -1069,23 +1114,27 @@ app.post('/UpdateMaterial', function (req, res) {
                                         EmployeeId = " + userId + ",\
                                         `datetime` = NOW() \
                                         where id = " + materialId;
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดวัตถุดิบได้' }));
-                        }
-                        else {
-                            var selectQuery = "select * from material where id = " + materialId;
-                            connection.query(selectQuery, function (error, valueRow) {
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(query, function (error, rows) {
+                            if (error) {
                                 connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดวัตถุดิบได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                }
-                            });
-                        }
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดวัตถุดิบได้' }));
+                            }
+                            else {
+                                var selectQuery = "select * from material where id = " + materialId;
+                                connection.query(selectQuery, function (error, valueRow) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดวัตถุดิบได้' }));
+                                    }
+                                    else {
+                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -1156,13 +1205,17 @@ app.post('/DeleteMaterial', function (req, res) {
                         database: 'factory'
                     });
                     var query = "delete from material where id = " + materialId;
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบวัตถุดิบได้' }));
-                        }
-                        else {
-                            res.send(JSON.stringify({ status: 1 }));
-                        }
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(query, function (error, rows) {
+                            if (error) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบวัตถุดิบได้' }));
+                            }
+                            else {
+                                res.send(JSON.stringify({ status: 1 }));
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -1287,23 +1340,27 @@ app.post('/AddNewCustomer', function (req, res) {
                                         values('" + customerName + "', '" + address + "','" + subdistrict + "','" +
                     district + "','" + province + "','" + postcode + "','" + regionId + "','" +
                     phone + "','" + transporter + "','" + transporterPhone + "', NOW(), " + userId + ", " + credit + ");";
-                connection.query(query, function (error, rows) {
-                    if (error) {
-                        connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มลูกค้าใหม่ได้' }));
-                    }
-                    else {
-                        var selectQuery = "select * from customer where id = " + rows['insertId'];
-                        connection.query(selectQuery, function (error, valueRow) {
+                var lock = new ReadWriteLock();
+                lock.writeLock(function (release) {
+                    connection.query(query, function (error, rows) {
+                        if (error) {
                             connection.end();
-                            if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
-                            }
-                            else {
-                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                            }
-                        });
-                    }
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มลูกค้าใหม่ได้' }));
+                        }
+                        else {
+                            var selectQuery = "select * from customer where id = " + rows['insertId'];
+                            connection.query(selectQuery, function (error, valueRow) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                }
+                            });
+                        }
+                    });
+                    release();
                 });
             }
         }
@@ -1355,24 +1412,28 @@ app.post('/UpdateCustomer', function (req, res) {
                                         credit = " + credit + ",\
                                         `datetime` = NOW() \
                                         where id = " + customerId;
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายละเอียดลูกค้าได้' }));
-                        }
-                        else {
-
-                            var selectQuery = "select * from customer where id = " + customerId;
-                            connection.query(selectQuery, function (error, valueRow) {
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(query, function (error, rows) {
+                            if (error) {
                                 connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                }
-                            });
-                        }
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายละเอียดลูกค้าได้' }));
+                            }
+                            else {
+
+                                var selectQuery = "select * from customer where id = " + customerId;
+                                connection.query(selectQuery, function (error, valueRow) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
+                                    }
+                                    else {
+                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -1448,13 +1509,17 @@ app.post('/DeleteCustomer', function (req, res) {
                         database: 'factory'
                     });
                     var query = "delete from customer where id = " + customerId;
-                    connection.query(query, function (error, rows) {
-                        if (error) {
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบลูกค้าได้' }));
-                        }
-                        else {
-                            res.send(JSON.stringify({ status: 1 }));
-                        }
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(query, function (error, rows) {
+                            if (error) {
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบลูกค้าได้' }));
+                            }
+                            else {
+                                res.send(JSON.stringify({ status: 1 }));
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -1561,55 +1626,59 @@ app.post('/AddNewOrder', function (req, res) {
                                         employeeId,\
                                         `datetime`) \
                                         values(" + customerId + ", " + userId + ", NOW());";
-                connection.query(query, function (error, rows) {
-                    if (error) {
-                        connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มคำสั่งซท้อใหม่ได้' }));
-                    }
-                    else {
-                        if ((typeof productId == 'undefined')
-                            || (typeof priceperpiece == 'undefined')
-                            || (typeof amount == 'undefined')) {
+                var lock = new ReadWriteLock();
+                lock.writeLock(function (release) {
+                    connection.query(query, function (error, rows) {
+                        if (error) {
                             connection.end();
-                            res.send(JSON.stringify({ status: 1 }));
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มคำสั่งซท้อใหม่ได้' }));
                         }
                         else {
-                            if ((productId.length != amount.length) && (productId.length != priceperpiece.length) && (amount.length != priceperpiece.length)) {
+                            if ((typeof productId == 'undefined')
+                                || (typeof priceperpiece == 'undefined')
+                                || (typeof amount == 'undefined')) {
                                 connection.end();
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Amount, PricePerPiece มีจำนวนไม่เท่ากัน' }));
+                                res.send(JSON.stringify({ status: 1 }));
                             }
                             else {
-                                var insertQuery = "insert into orderdetails (orderid, productid, amount, priceperpiece, employeeid, `datetime`) values ";
-                                var updateQuery = "update product set `amount` = case id ";
-                                for (var i = 0; i < productId.length; i++) {
-                                    var id = productId[i];
-                                    var eachamount = amount[i]
-                                    var eachpriceperpiece = priceperpiece[i];
-                                    insertQuery += "(" + rows['insertId'] + ", " + id + ", " + eachamount + ", " + eachpriceperpiece + ", " + userId + ", NOW())";
-                                    updateQuery += "when " + id + " then `amount` - " + eachamount + " ";
-                                    if (i != productId.length - 1) insertQuery += ",";
-                                    else updateQuery += "else `amount` end";
+                                if ((productId.length != amount.length) && (productId.length != priceperpiece.length) && (amount.length != priceperpiece.length)) {
+                                    connection.end();
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Amount, PricePerPiece มีจำนวนไม่เท่ากัน' }));
                                 }
-                                connection.query(insertQuery, function (error, valueRow) {
-                                    if (error) {
-                                        connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการสั่งซื้อในคำสั่งซื้อได้' }));
+                                else {
+                                    var insertQuery = "insert into orderdetails (orderid, productid, amount, priceperpiece, employeeid, `datetime`) values ";
+                                    var updateQuery = "update product set `amount` = case id ";
+                                    for (var i = 0; i < productId.length; i++) {
+                                        var id = productId[i];
+                                        var eachamount = amount[i]
+                                        var eachpriceperpiece = priceperpiece[i];
+                                        insertQuery += "(" + rows['insertId'] + ", " + id + ", " + eachamount + ", " + eachpriceperpiece + ", " + userId + ", NOW())";
+                                        updateQuery += "when " + id + " then `amount` - " + eachamount + " ";
+                                        if (i != productId.length - 1) insertQuery += ",";
+                                        else updateQuery += "else `amount` end";
                                     }
-                                    else {
-                                        connection.query(updateQuery, function (error, valueRow) {
+                                    connection.query(insertQuery, function (error, valueRow) {
+                                        if (error) {
                                             connection.end();
-                                            if (error) {
-                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
-                                            }
-                                            else {
-                                                res.send(JSON.stringify({ status: 1 }));
-                                            }
-                                        });
-                                    }
-                                });
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการสั่งซื้อในคำสั่งซื้อได้' }));
+                                        }
+                                        else {
+                                            connection.query(updateQuery, function (error, valueRow) {
+                                                connection.end();
+                                                if (error) {
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
+                                                }
+                                                else {
+                                                    res.send(JSON.stringify({ status: 1 }));
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
                             }
                         }
-                    }
+                    });
+                    release();
                 });
             }
         }
@@ -1642,187 +1711,190 @@ app.post('/EditOrder', function (req, res) {
                         database: 'factory'
                     });
                     var getOrderDetails = "select productid id, amount from orderdetails where orderid = " + orderId;
-
-                    connection.query(getOrderDetails, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
-                        }
-                        else {
-                            if (rows.length > 0) {
-                                var updateQuery = "update product set `amount` = case id ";
-                                for (var i = 0; i < rows.length; i++) {
-                                    updateQuery += "when " + rows[i].id + " then `amount` + " + rows[i].amount + " ";
-                                }
-                                updateQuery += "else `amount` end";
-                                var query = "update `order` set \
-                                        customerId = '" + customerId + "',\
-                                        isupdated = 1\
-                                        where id = " + orderId;
-                                connection.query(query, function (error, rows) {
-                                    if (error) {
-                                        connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส เกิดความผิดพลาดกับเดต้าเบส' }));
-                                    }
-                                    else {
-                                        if ((typeof orderDetailId == 'undefined')
-                                            || (typeof productId == 'undefined')
-                                            || (typeof priceperpiece == 'undefined')
-                                            || (typeof amount == 'undefined')) {
-                                            var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
-                                            connection.query(deleteOrderdetails, function (error, rows) {
-                                                connection.end();
-                                                if (error) {
-                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
-                                                }
-                                                else {
-                                                    res.send(JSON.stringify({ status: 1 }));
-                                                }
-                                            });
-                                        }
-                                        else {
-                                            var q = 'if (not exist(select id from orderdetails where id = ' + '))';
-                                            var insertquery = 'INSERT INTO orderdetails (id, orderid, priceperpiece, amount, employeeid, datetime, productid) ';
-                                            var valuesquery = 'Values ';
-                                            var duplicatequery = 'ON DUPLICATE KEY UPDATE priceperpiece = values(priceperpiece), amount = values(amount)';
-                                            var minusQuery = "update product set amount = case id ";
-                                            var deleteQuery = "delete from orderdetails where orderid = " + orderId + " and ";
-                                            if ((orderDetailId.length != productId.length)
-                                                || (priceperpiece.length != amount.length)
-                                                || (orderDetailId.length != priceperpiece.length)
-                                                || (productId.length != amount.length)) {
-                                                connection.end();
-                                                res.send(JSON.stringify({ status: 1 }));
-                                            }
-                                            else {
-                                                connection.query(updateQuery, function (error, rows) {
-                                                    if (error) {
-                                                        connection.end();
-                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
-                                                    }
-                                                    else {
-                                                        for (var i = 0; i < orderDetailId.length; i++) {
-                                                            var eachorderDetailId = orderDetailId[i];
-                                                            var eachproductId = productId[i];
-                                                            var eachpriceperpiece = priceperpiece[i];
-                                                            var eachamount = amount[i];
-                                                            valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now(), ' + eachproductId + ')';
-                                                            minusQuery += "when " + eachproductId + " then amount - " + eachamount + " ";
-                                                            deleteQuery += "id <> " + eachorderDetailId + " ";
-                                                            if (i != orderDetailId.length - 1) {
-                                                                valuesquery += ',';
-                                                                deleteQuery += "and ";
-                                                            }
-                                                        }
-                                                        minusQuery += "else amount end";
-                                                        var updateNewProductQuery = insertquery + valuesquery + duplicatequery;
-                                                        connection.query(minusQuery, function (error, valueRow) {
-                                                            if (error) {
-                                                                connection.end();
-                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
-                                                            }
-                                                            else {
-                                                                connection.query(deleteQuery, function (error, valueRow) {
-                                                                    if (error) {
-                                                                        connection.end();
-                                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
-                                                                    }
-                                                                    else {
-                                                                        connection.query(updateNewProductQuery, function (error, valueRow) {
-                                                                            connection.end();
-                                                                            if (error) {
-                                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
-                                                                            }
-                                                                            else {
-                                                                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                                                            }
-                                                                        });
-                                                                    }
-                                                                });
-                                                            }
-                                                        });
-                                                    }
-                                                });
-
-                                            }
-                                        }
-                                    }
-                                });
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(getOrderDetails, function (error, rows) {
+                            if (error) {
+                                connection.end();
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                             }
                             else {
-                                var query = "update `order` set \
+                                if (rows.length > 0) {
+                                    var updateQuery = "update product set `amount` = case id ";
+                                    for (var i = 0; i < rows.length; i++) {
+                                        updateQuery += "when " + rows[i].id + " then `amount` + " + rows[i].amount + " ";
+                                    }
+                                    updateQuery += "else `amount` end";
+                                    var query = "update `order` set \
                                         customerId = '" + customerId + "',\
                                         isupdated = 1\
                                         where id = " + orderId;
-                                connection.query(query, function (error, rows) {
-                                    if (error) {
-                                        connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขคำสั่งซื้อได้' }));
-                                    }
-                                    else {
-                                        if ((typeof orderDetailId == 'undefined')
-                                            || (typeof productId == 'undefined')
-                                            || (typeof priceperpiece == 'undefined')
-                                            || (typeof amount == 'undefined')) {
-                                            var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
-                                            connection.query(deleteOrderdetails, function (error, rows) {
-                                                connection.end();
-                                                if (error) {
-                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
-                                                }
-                                                else {
-                                                    res.send(JSON.stringify({ status: 1 }));
-                                                }
-                                            });
+                                    connection.query(query, function (error, rows) {
+                                        if (error) {
+                                            connection.end();
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส เกิดความผิดพลาดกับเดต้าเบส' }));
                                         }
                                         else {
-                                            var q = 'if (not exist(select id from orderdetails where id = ' + '))';
-                                            var insertquery = 'INSERT INTO orderdetails (id, orderid, priceperpiece, amount, employeeid, datetime, productid) ';
-                                            var valuesquery = 'Values ';
-                                            var duplicatequery = 'ON DUPLICATE KEY UPDATE priceperpiece = values(priceperpiece), amount = values(amount)';
-                                            var minusQuery = "update product set amount = case id ";
-                                            var deleteQuery = "delete from orderdetails where orderid = " + orderId + " and ";
-                                            if ((orderDetailId.length != productId.length) || (priceperpiece.length != amount.length)) {
-                                                connection.end();
-                                                res.send(JSON.stringify({ status: 0, errorMessage: 'OrderDetailId, ProductId, PricePerPiece and Amount มีจำนวนไม่เท่ากัน' }));
-                                            }
-                                            else {
-                                                for (var i = 0; i < orderDetailId.length; i++) {
-                                                    var eachorderDetailId = orderDetailId[i];
-                                                    var eachproductId = productId[i];
-                                                    var eachpriceperpiece = priceperpiece[i];
-                                                    var eachamount = amount[i];
-                                                    valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now(), ' + eachproductId + ')';
-                                                    minusQuery += "when " + eachproductId + " then amount - " + eachamount + " ";
-                                                    if (i != orderDetailId.length - 1) {
-                                                        valuesquery += ',';
-                                                    }
-                                                }
-                                                minusQuery += "else amount end";
-                                                var updateQuery = insertquery + valuesquery + duplicatequery;
-                                                connection.query(minusQuery, function (error, valueRow) {
+                                            if ((typeof orderDetailId == 'undefined')
+                                                || (typeof productId == 'undefined')
+                                                || (typeof priceperpiece == 'undefined')
+                                                || (typeof amount == 'undefined')) {
+                                                var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
+                                                connection.query(deleteOrderdetails, function (error, rows) {
+                                                    connection.end();
                                                     if (error) {
-                                                        connection.end();
-                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
+                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
                                                     }
                                                     else {
-                                                        connection.query(updateQuery, function (error, valueRow) {
-                                                            connection.end();
-                                                            if (error) {
-                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการสั่งซื้อในคำสั่งซื้อได้' }));
-                                                            }
-                                                            else {
-                                                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                                            }
-                                                        });
+                                                        res.send(JSON.stringify({ status: 1 }));
                                                     }
                                                 });
                                             }
+                                            else {
+                                                var q = 'if (not exist(select id from orderdetails where id = ' + '))';
+                                                var insertquery = 'INSERT INTO orderdetails (id, orderid, priceperpiece, amount, employeeid, datetime, productid) ';
+                                                var valuesquery = 'Values ';
+                                                var duplicatequery = 'ON DUPLICATE KEY UPDATE priceperpiece = values(priceperpiece), amount = values(amount)';
+                                                var minusQuery = "update product set amount = case id ";
+                                                var deleteQuery = "delete from orderdetails where orderid = " + orderId + " and ";
+                                                if ((orderDetailId.length != productId.length)
+                                                    || (priceperpiece.length != amount.length)
+                                                    || (orderDetailId.length != priceperpiece.length)
+                                                    || (productId.length != amount.length)) {
+                                                    connection.end();
+                                                    res.send(JSON.stringify({ status: 1 }));
+                                                }
+                                                else {
+                                                    connection.query(updateQuery, function (error, rows) {
+                                                        if (error) {
+                                                            connection.end();
+                                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
+                                                        }
+                                                        else {
+                                                            for (var i = 0; i < orderDetailId.length; i++) {
+                                                                var eachorderDetailId = orderDetailId[i];
+                                                                var eachproductId = productId[i];
+                                                                var eachpriceperpiece = priceperpiece[i];
+                                                                var eachamount = amount[i];
+                                                                valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now(), ' + eachproductId + ')';
+                                                                minusQuery += "when " + eachproductId + " then amount - " + eachamount + " ";
+                                                                deleteQuery += "id <> " + eachorderDetailId + " ";
+                                                                if (i != orderDetailId.length - 1) {
+                                                                    valuesquery += ',';
+                                                                    deleteQuery += "and ";
+                                                                }
+                                                            }
+                                                            minusQuery += "else amount end";
+                                                            var updateNewProductQuery = insertquery + valuesquery + duplicatequery;
+                                                            connection.query(minusQuery, function (error, valueRow) {
+                                                                if (error) {
+                                                                    connection.end();
+                                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
+                                                                }
+                                                                else {
+                                                                    connection.query(deleteQuery, function (error, valueRow) {
+                                                                        if (error) {
+                                                                            connection.end();
+                                                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
+                                                                        }
+                                                                        else {
+                                                                            connection.query(updateNewProductQuery, function (error, valueRow) {
+                                                                                connection.end();
+                                                                                if (error) {
+                                                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
+                                                                                }
+                                                                                else {
+                                                                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                                                                }
+                                                                            });
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+
+                                                }
+                                            }
                                         }
-                                    }
-                                });
+                                    });
+                                }
+                                else {
+                                    var query = "update `order` set \
+                                        customerId = '" + customerId + "',\
+                                        isupdated = 1\
+                                        where id = " + orderId;
+                                    connection.query(query, function (error, rows) {
+                                        if (error) {
+                                            connection.end();
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขคำสั่งซื้อได้' }));
+                                        }
+                                        else {
+                                            if ((typeof orderDetailId == 'undefined')
+                                                || (typeof productId == 'undefined')
+                                                || (typeof priceperpiece == 'undefined')
+                                                || (typeof amount == 'undefined')) {
+                                                var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
+                                                connection.query(deleteOrderdetails, function (error, rows) {
+                                                    connection.end();
+                                                    if (error) {
+                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
+                                                    }
+                                                    else {
+                                                        res.send(JSON.stringify({ status: 1 }));
+                                                    }
+                                                });
+                                            }
+                                            else {
+                                                var q = 'if (not exist(select id from orderdetails where id = ' + '))';
+                                                var insertquery = 'INSERT INTO orderdetails (id, orderid, priceperpiece, amount, employeeid, datetime, productid) ';
+                                                var valuesquery = 'Values ';
+                                                var duplicatequery = 'ON DUPLICATE KEY UPDATE priceperpiece = values(priceperpiece), amount = values(amount)';
+                                                var minusQuery = "update product set amount = case id ";
+                                                var deleteQuery = "delete from orderdetails where orderid = " + orderId + " and ";
+                                                if ((orderDetailId.length != productId.length) || (priceperpiece.length != amount.length)) {
+                                                    connection.end();
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'OrderDetailId, ProductId, PricePerPiece and Amount มีจำนวนไม่เท่ากัน' }));
+                                                }
+                                                else {
+                                                    for (var i = 0; i < orderDetailId.length; i++) {
+                                                        var eachorderDetailId = orderDetailId[i];
+                                                        var eachproductId = productId[i];
+                                                        var eachpriceperpiece = priceperpiece[i];
+                                                        var eachamount = amount[i];
+                                                        valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now(), ' + eachproductId + ')';
+                                                        minusQuery += "when " + eachproductId + " then amount - " + eachamount + " ";
+                                                        if (i != orderDetailId.length - 1) {
+                                                            valuesquery += ',';
+                                                        }
+                                                    }
+                                                    minusQuery += "else amount end";
+                                                    var updateQuery = insertquery + valuesquery + duplicatequery;
+                                                    connection.query(minusQuery, function (error, valueRow) {
+                                                        if (error) {
+                                                            connection.end();
+                                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
+                                                        }
+                                                        else {
+                                                            connection.query(updateQuery, function (error, valueRow) {
+                                                                connection.end();
+                                                                if (error) {
+                                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการสั่งซื้อในคำสั่งซื้อได้' }));
+                                                                }
+                                                                else {
+                                                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
                             }
-                        }
+                        });
+                        release();
                     });
                 }
             }
@@ -1856,47 +1928,51 @@ app.post('/DeleteOrder', function (req, res) {
                     var getPurchase = "select productid id, `amount` from orderdetails where orderid = " + orderId;
                     var query = "delete o.*, od.* from `order` as o left join orderdetails as od on o.id = od.orderid where o.id = " + orderId + " or od.orderid = " + orderId;
                     var updateQuery = "update product set `amount` = case id ";
-                    connection.query(getPurchase, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
-                        }
-                        else {
-                            if (rows.length > 0) {
-                                for (var i = 0; i < rows.length; i++) {
-                                    updateQuery += "when " + rows[i].id + " then `amount` + " + rows[i].amount + " ";
-                                }
-                                updateQuery += "else `amount` end";
-                                connection.query(updateQuery, function (error, rows) {
-                                    if (error) {
-                                        connection.end();
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
-                                    }
-                                    else {
-                                        connection.query(query, function (error, rows) {
-                                            connection.end();
-                                            if (error) {
-                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบคำสั่งซื้อได้' }));
-                                            }
-                                            else {
-                                                res.send(JSON.stringify({ status: 1 }));
-                                            }
-                                        });
-                                    }
-                                });
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(getPurchase, function (error, rows) {
+                            if (error) {
+                                connection.end();
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
                             }
                             else {
-                                connection.query(query, function (error, rows) {
-                                    connection.end();
-                                    if (error) {
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบคำสั่งซื้อได้' }));
+                                if (rows.length > 0) {
+                                    for (var i = 0; i < rows.length; i++) {
+                                        updateQuery += "when " + rows[i].id + " then `amount` + " + rows[i].amount + " ";
                                     }
-                                    else {
-                                        res.send(JSON.stringify({ status: 1 }));
-                                    }
-                                });
+                                    updateQuery += "else `amount` end";
+                                    connection.query(updateQuery, function (error, rows) {
+                                        if (error) {
+                                            connection.end();
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
+                                        }
+                                        else {
+                                            connection.query(query, function (error, rows) {
+                                                connection.end();
+                                                if (error) {
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบคำสั่งซื้อได้' }));
+                                                }
+                                                else {
+                                                    res.send(JSON.stringify({ status: 1 }));
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                                else {
+                                    connection.query(query, function (error, rows) {
+                                        connection.end();
+                                        if (error) {
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบคำสั่งซื้อได้' }));
+                                        }
+                                        else {
+                                            res.send(JSON.stringify({ status: 1 }));
+                                        }
+                                    });
+                                }
                             }
-                        }
+                        });
+                        release();
                     });
                 }
             }
@@ -1980,22 +2056,26 @@ app.post('/AddNewPurchase', function (req, res) {
                     priceperpiece + ", " + amount + ", " +
                     userId + ", " + productId + ", NOW());";
                 var updateQuery = "update product set amount = amount - " + amount + " where id = " + productId;
-                connection.query(query, function (error, rows) {
-                    if (error) {
-                        connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการซื้อได้' }));
-                    }
-                    else {
-                        connection.query(updateQuery, function (error, rows) {
+                var lock = new ReadWriteLock();
+                lock.writeLock(function (release) {
+                    connection.query(query, function (error, rows) {
+                        if (error) {
                             connection.end();
-                            if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการซื้อได้' }));
-                            }
-                            else {
-                                res.send(JSON.stringify({ status: 1 }));
-                            }
-                        });
-                    }
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการซื้อได้' }));
+                        }
+                        else {
+                            connection.query(updateQuery, function (error, rows) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มรายการซื้อได้' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
+                        }
+                    });
+                    release();
                 });
             }
         }
@@ -2026,22 +2106,26 @@ app.post('/EditPurchase', function (req, res) {
                     });
                     var updateQuery = "update product set `amount` = `amount` + (select `amount` from orderdetails where id = " + orderdetailsId + ") - " + amount + " where id = (select productid from orderdetails where id = " + orderdetailsId + ")";
                     var query = "update orderdetails set priceperpiece = " + priceperpiece + ", `amount` = " + amount + " where id = " + orderdetailsId;
-                    connection.query(updateQuery, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการซื้อได้' }));
-                        }
-                        else {
-                            connection.query(query, function (error, rows) {
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(updateQuery, function (error, rows) {
+                            if (error) {
                                 connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการซื้อได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1 }));
-                                }
-                            });
-                        }
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการซื้อได้' }));
+                            }
+                            else {
+                                connection.query(query, function (error, rows) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายการซื้อได้' }));
+                                    }
+                                    else {
+                                        res.send(JSON.stringify({ status: 1 }));
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -2074,22 +2158,26 @@ app.post('/DeletePurchase', function (req, res) {
                     });
                     var updateQuery = "update product set `amount` = `amount` + (select `amount` from orderdetails where id = " + orderdetailsId + ") where id = (select productid from orderdetails where id = " + orderdetailsId + ")";
                     var query = "delete from orderdetails where id = " + orderdetailsId;
-                    connection.query(updateQuery, function (error, rows) {
-                        if (error) {
-                            connection.end();
-                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการซื้อได้' }));
-                        }
-                        else {
-                            connection.query(query, function (error, rows) {
+                    var lock = new ReadWriteLock();
+                    lock.writeLock(function (release) {
+                        connection.query(updateQuery, function (error, rows) {
+                            if (error) {
                                 connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการซื้อได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1 }));
-                                }
-                            });
-                        }
+                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการซื้อได้' }));
+                            }
+                            else {
+                                connection.query(query, function (error, rows) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการซื้อได้' }));
+                                    }
+                                    else {
+                                        res.send(JSON.stringify({ status: 1 }));
+                                    }
+                                });
+                            }
+                        });
+                        release();
                     });
                 }
             }
@@ -2130,22 +2218,26 @@ app.post('/AddNewMaterialTransaction', function (req, res) {
                     }
                     else updateQuery += "else m2.amount end;";
                 }
-                connection.query(insertQuery, function (error, rows) {
-                    if (error) {
-                        connection.end();
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
-                    }
-                    else {
-                        connection.query(updateQuery, function (error, rows) {
+                var lock = new ReadWriteLock();
+                lock.writeLock(function (release) {
+                    connection.query(insertQuery, function (error, rows) {
+                        if (error) {
                             connection.end();
-                            if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
-                            }
-                            else {
-                                res.send(JSON.stringify({ status: 1 }));
-                            }
-                        });
-                    }
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
+                        }
+                        else {
+                            connection.query(updateQuery, function (error, rows) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
+                        }
+                    });
+                    release();
                 });
             }
         }
@@ -2304,11 +2396,11 @@ app.post('/AddNewCustomerProductPrice', function (req, res) {
     var price = json.price;
     var productId = json.productId;
     let connection = mysql.createConnection({
-                    host: 'localhost',
-                    user: 'root',
-                    password: 'Password@1',
-                    database: 'factory'
-                });
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
     isLogin(userId, token, function (error, ans) {
         if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
@@ -2322,7 +2414,6 @@ app.post('/AddNewCustomerProductPrice', function (req, res) {
                 }
                 else {
                     if (price.length != productId.length) {
-                        connection.end();
                         res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Price มีจำนวนไม่เท่ากัน' }));
                     }
                     else {
@@ -2333,14 +2424,18 @@ app.post('/AddNewCustomerProductPrice', function (req, res) {
                             insertQuery += "(" + prodid + ", " + customerId + ", " + eachprice + ")";
                             if (i != productId.length - 1) insertQuery += ",";
                         }
-                        connection.query(insertQuery, function (error, valueRow) {
-                            if (error) {
-                                connection.end();
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเก็บราคาสินค้าของลูกค้าได้' }));
-                            }
-                            else {
-                                res.send(JSON.stringify({ status: 1}));
-                            }
+                        var lock = new ReadWriteLock();
+                        lock.writeLock(function (release) {
+                            connection.query(insertQuery, function (error, valueRow) {
+                                if (error) {
+                                    connection.end();
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเก็บราคาสินค้าของลูกค้าได้' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
+                            release();
                         });
                     }
                 }
@@ -2381,15 +2476,18 @@ app.post('/UpdateCustomerProductPrice', function (req, res) {
                             query += "when " + customerProductPriceId[i] + " then `price` + " + price[i] + " ";
                         }
                         query += "else `price` end";
-                        console.log(query);
-                        connection.query(query, function (error, rows) {
-                            connection.end();
-                            if (error) {
-                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขราคาสินค้าของลูกค้าได้' }));
-                            }
-                            else {
-                                res.send(JSON.stringify({ status: 1 }));
-                            }
+                        var lock = new ReadWriteLock();
+                        lock.writeLock(function (release) {
+                            connection.query(query, function (error, rows) {
+                                connection.end();
+                                if (error) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขราคาสินค้าของลูกค้าได้' }));
+                                }
+                                else {
+                                    res.send(JSON.stringify({ status: 1 }));
+                                }
+                            });
+                            release();
                         });
                     }
                 }
@@ -2417,14 +2515,18 @@ app.post('/DeleteCustomerProductPrice', function (req, res) {
                     database: 'factory'
                 });
                 var query = "delete from `customerproductprice` where id = " + customerProductPriceId + ";";
-                connection.query(query, function (error, rows) {
-                    connection.end();
-                    if (error) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบราคาสินค้าของลูกค้าได้' }));
-                    }
-                    else {
-                        res.send(JSON.stringify({ status: 1 }));
-                    }
+                var lock = new ReadWriteLock();
+                lock.writeLock(function (release) {
+                    connection.query(query, function (error, rows) {
+                        connection.end();
+                        if (error) {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบราคาสินค้าของลูกค้าได้' }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 1 }));
+                        }
+                    });
+                    release();
                 });
             }
         }
