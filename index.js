@@ -1600,6 +1600,7 @@ app.post('/DeleteCustomer', function (req, res) {
                         database: 'factory'
                     });
                     var query = "delete from customer where id = " + customerId;
+                    var deleteCustProd = "delete from customerproductprice where customerid = " + customerId;
                     var lock = new ReadWriteLock();
                     lock.writeLock(function (release) {
                         connection.query(query, function (error, rows) {
@@ -1607,7 +1608,16 @@ app.post('/DeleteCustomer', function (req, res) {
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบลูกค้าได้' }));
                             }
                             else {
-                                res.send(JSON.stringify({ status: 1 }));
+                                connection.query(deleteCustProd, function (error, rows) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบลูกค้าได้' }));
+                                    }
+                                    else {
+
+                                        res.send(JSON.stringify({ status: 1 }));
+                                    }
+                                });
                             }
                         });
                         release();
