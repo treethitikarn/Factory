@@ -1433,6 +1433,12 @@ app.post('/UpdateCustomer', function (req, res) {
     var transporter = json.transporter;
     var transporterPhone = json.transporterPhone;
     var credit = json.credit;
+    // Array
+    var customerProductPriceId = json.customerProductPriceId;
+    // Array
+    var price = json.price;
+    // Array
+    var productId = json.productId;
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
             if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
@@ -1469,17 +1475,53 @@ app.post('/UpdateCustomer', function (req, res) {
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขรายละเอียดลูกค้าได้' }));
                             }
                             else {
-
-                                var selectQuery = "select * from customer where id = " + customerId;
-                                connection.query(selectQuery, function (error, valueRow) {
-                                    connection.end();
-                                    if (error) {
-                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
+                                if ((typeof price == 'undefined')
+                                    || (typeof productId == 'undefined')
+                                    || (typeof customerProductPriceId == 'undefined')) {
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'ไม่มี ProductId หรือ Price หรือ customerProductPriceId' }));
+                                }
+                                else {
+                                    if ((price.length != productId.length) || (price.length != customerProductPriceId.length) || (productId.length != customerProductPriceId.length)) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Price, customerProductPriceId มีจำนวนไม่เท่ากัน' }));
                                     }
                                     else {
-                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                        var insertQuery = "insert into customerproductprice (id,productId,customerId,price) values ";
+                                        var deleteQuery = "delete from customerproductprice where";
+                                        for (var i = 0; i < price.length; i++) {
+                                            insertQuery += "(" + customerProductPriceId[i] + ", " + productId[i] + ", " + customerId + ", " + price[i] + ")";
+                                            deleteQuery += " id <> " + customerProductPriceId[i];
+                                            if (i != price.length - 1) {
+                                                insertQuery += ',';
+                                                deleteQuery += " and ";
+                                            }
+                                        }
+                                        insertQuery += " on duplicate key update price = values(price)"
+                                        connection.query(deleteQuery, function (error, ans) {
+                                            if (error) {
+                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขราคาสินค้าของลูกค้าได้' }));
+                                            }
+                                            else {
+                                                connection.query(insertQuery, function (error, ans) {
+                                                    if (error) {
+                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขราคาสินค้าของลูกค้าได้' }));
+                                                    }
+                                                    else {
+                                                        var selectQuery = "select * from customer where id = " + customerId;
+                                                        connection.query(selectQuery, function (error, valueRow) {
+                                                            connection.end();
+                                                            if (error) {
+                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
+                                                            }
+                                                            else {
+                                                                res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
                                     }
-                                });
+                                }
                             }
                         });
                         release();
