@@ -311,6 +311,44 @@ app.post('/GetProductList', function (req, res) {
     });
 });
 
+app.post('/GetProductListByCustomerId', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerId = json.customerId;
+    let connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'Password@1',
+        database: 'factory'
+    });
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
+            }
+            else {
+                var query = "SELECT p.*, cp.price from product p join customerproductprice cp on p.id = cp.productid where cp.customerid = " + customerId + " order by p.id";
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำรายการสินค้าออกมาได้' }));
+                    }
+                    else {
+                        if (typeof rows !== 'undefined') {
+                            res.send(JSON.stringify({ status: 1, data: rows }));
+                        }
+                        else {
+                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำรายการสินค้าออกมาได้' }));
+                        }
+                    }
+                });
+            }
+        }
+    });
+});
+
 app.post('/GetProductById', function (req, res) {
     var json = req.body;
     var userId = json.userId;
@@ -1280,7 +1318,7 @@ app.post('/GetCustomerById', function (req, res) {
         }
         else {
             if (ans) {
-                connection.query('Select * from customer where id=' + customerId, function (error, rows) {
+                connection.query('Select * from customer c join customerproductprice cp on c.id = cp.customerid where c.id=' + customerId, function (error, rows) {
                     connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
                     else {
@@ -1311,6 +1349,10 @@ app.post('/AddNewCustomer', function (req, res) {
     var transporter = json.transporter;
     var transporterPhone = json.transporterPhone;
     var credit = json.credit;
+    // Array
+    var price = json.price;
+    // Array
+    var productId = json.productId;
     isLogin(userId, token, function (error, ans) {
         if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
         else {
@@ -1348,15 +1390,22 @@ app.post('/AddNewCustomer', function (req, res) {
                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มลูกค้าใหม่ได้' }));
                         }
                         else {
-                            var selectQuery = "select * from customer where id = " + rows['insertId'];
-                            connection.query(selectQuery, function (error, valueRow) {
-                                connection.end();
-                                if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
-                                }
+                            addNewCustomerProductPrice(rows['insertId'], price, productId, function (isSuccess, errorMessage) {
+                                var selectQuery = "select * from customer where id = " + rows['insertId'];
+                                connection.query(selectQuery, function (error, valueRow) {
+                                    connection.end();
+                                    if (error) {
+                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
+                                    }
+                                    else {
+                                        if (!isSuccess) {
+                                            res.send(JSON.stringify({ status: 1, errorMessage: errorMessage, data: valueRow[0] }));
+                                        }
+                                        else {
+                                            res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                        }
+                                    }
+                                });
                             });
                         }
                     });
@@ -2388,61 +2437,45 @@ app.post('/SearchProductTransaction', function (req, res) {
     });
 });
 
-app.post('/AddNewCustomerProductPrice', function (req, res) {
-    var json = req.body;
-    var userId = json.userId;
-    var token = json.token;
-    var customerId = json.customerId;
-    var price = json.price;
-    var productId = json.productId;
+function addNewCustomerProductPrice(customerId, price, productId, callback) {
     let connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
         database: 'factory'
     });
-    isLogin(userId, token, function (error, ans) {
-        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
+    if ((typeof price == 'undefined')
+        || (typeof productId == 'undefined')) {
+        callback(false, "ไม่มี ProductId หรือ Price");
+    }
+    else {
+        if (price.length != productId.length) {
+            callback(false, "ProductId, Price มีจำนวนไม่เท่ากัน")
+        }
         else {
-            if (!ans) {
-                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
+            var insertQuery = "insert into customerproductprice (productid, customerid,`price`) values ";
+            for (var i = 0; i < productId.length; i++) {
+                var prodid = productId[i];
+                var eachprice = price[i]
+                insertQuery += "(" + prodid + ", " + customerId + ", " + eachprice + ")";
+                if (i != productId.length - 1) insertQuery += ",";
             }
-            else {
-                if ((typeof price == 'undefined')
-                    || (typeof productId == 'undefined')) {
-                    res.send(JSON.stringify({ status: 1 }));
-                }
-                else {
-                    if (price.length != productId.length) {
-                        res.send(JSON.stringify({ status: 0, errorMessage: 'ProductId, Price มีจำนวนไม่เท่ากัน' }));
+            var lock = new ReadWriteLock();
+            lock.writeLock(function (release) {
+                connection.query(insertQuery, function (error, valueRow) {
+                    if (error) {
+                        connection.end();
+                        callback(false, "เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเก็บราคาสินค้าของลูกค้าได้");
                     }
                     else {
-                        var insertQuery = "insert into customerproductprice (productid, customerid,`price`) values ";
-                        for (var i = 0; i < productId.length; i++) {
-                            var prodid = productId[i];
-                            var eachprice = price[i]
-                            insertQuery += "(" + prodid + ", " + customerId + ", " + eachprice + ")";
-                            if (i != productId.length - 1) insertQuery += ",";
-                        }
-                        var lock = new ReadWriteLock();
-                        lock.writeLock(function (release) {
-                            connection.query(insertQuery, function (error, valueRow) {
-                                if (error) {
-                                    connection.end();
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเก็บราคาสินค้าของลูกค้าได้' }));
-                                }
-                                else {
-                                    res.send(JSON.stringify({ status: 1 }));
-                                }
-                            });
-                            release();
-                        });
+                        callback(true, "");
                     }
-                }
-            }
+                });
+                release();
+            });
         }
-    });
-});
+    }
+}
 
 app.post('/UpdateCustomerProductPrice', function (req, res) {
     var json = req.body;
