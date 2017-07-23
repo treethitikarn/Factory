@@ -376,6 +376,7 @@ app.post('/SearchProductByCustomerId', function (req, res) {
                 and (('" + productName + "' is null or '" + productName + "' = '') or p.name like '%" + productName + "%')\
                 and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or p.producttypeid = '" + productTypeId + "')\
                 and cp.customerId = " + customerId;
+                console.log(query);
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1359,7 +1360,7 @@ app.post('/GetCustomerById', function (req, res) {
         }
         else {
             if (ans) {
-                connection.query('select c.*, cp.id customerproductpriceId,p.id productId, p.name productName, cp.price price from customer c join customerproductprice cp on c.id = cp.customerid join product p on cp.productId = p.id where c.id = ' + customerId, function (error, rows) {
+                connection.query('select c.*, cp.id customerproductpriceId,p.id productId, p.name productName, cp.price price from customer c left join customerproductprice cp on c.id = cp.customerid left join product p on cp.productId = p.id where c.id = ' + customerId, function (error, rows) {
                     connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
                     else {
