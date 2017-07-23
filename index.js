@@ -1318,7 +1318,7 @@ app.post('/GetCustomerById', function (req, res) {
         }
         else {
             if (ans) {
-                connection.query('Select * from customer c join customerproductprice cp on c.id = cp.customerid where c.id=' + customerId, function (error, rows) {
+                connection.query('select c.*, cp.id customerproductpriceId,p.id productId, p.name productName, cp.price price from customer c join customerproductprice cp on c.id = cp.customerid join product p on cp.productId = p.id where c.id = ' + customerId, function (error, rows) {
                     connection.end();
                     if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
                     else {
