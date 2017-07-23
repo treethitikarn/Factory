@@ -349,6 +349,47 @@ app.post('/GetProductListByCustomerId', function (req, res) {
     });
 });
 
+app.post('/SearchProductByCustomerId', function (req, res) {
+    var json = req.body;
+    var userId = json.userId;
+    var token = json.token;
+    var customerId = json.customerId;
+    var productId = json.productId;
+    var productName = json.productName;
+    var productTypeId = json.productTypeId;
+    isLogin(userId, token, function (error, ans) {
+        if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
+        else {
+            if (!ans) {
+                res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
+            }
+            else {
+                let connection = mysql.createConnection({
+                    host: 'localhost',
+                    user: 'root',
+                    password: 'Password@1',
+                    database: 'factory'
+                });
+                var query = "select p.id as id, p.name as name, p.producttypeid as ProductTypeId, p.amount as amount\
+                from product p join customerproductprice cp on p.id = cp.productId\
+                where (('" + productId + "' is null or '" + productId + "' = '') or p.id = '" + productId + "')\
+                and (('" + productName + "' is null or '" + productName + "' = '') or p.name like '%" + productName + "%')\
+                and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or p.producttypeid = '" + productTypeId + "')\
+                and cp.customerId = " + customerId;
+                connection.query(query, function (error, rows) {
+                    connection.end();
+                    if (error) {
+                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถค้นหาได้' }));
+                    }
+                    else {
+                        res.send(JSON.stringify({ status: 1, data: rows }));
+                    }
+                });
+            }
+        }
+    });
+});
+
 app.post('/GetProductById', function (req, res) {
     var json = req.body;
     var userId = json.userId;
