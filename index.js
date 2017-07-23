@@ -329,7 +329,7 @@ app.post('/GetProductListByCustomerId', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                var query = "SELECT p.*, cp.price from product p join customerproductprice cp on p.id = cp.productid where cp.customerid = " + customerId + " order by p.id";
+                var query = "select prod.*, ifnull(cust.price,0) price from (select * from product) prod left join (select productid,price from customerproductprice where customerid = " + customerid + ") cust on prod.id = cust.productid order by prod.id";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
