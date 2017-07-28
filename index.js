@@ -487,7 +487,7 @@ app.post('/AddNewProduct', function (req, res) {
                                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                             }
                                             else {
-                                                var selectQuery = "select * from product where id = " + rows['insertId'];
+                                                var selectQuery = "select * from product where id = ";
                                                 connection.query(selectQuery, function (error, valueRow) {
                                                     connection.end();
                                                     if (error) {
@@ -496,7 +496,7 @@ app.post('/AddNewProduct', function (req, res) {
                                                     }
                                                     else {
                                                         console.log(valueRow[0]);
-                                                        res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                                        res.send(JSON.stringify({ status: 1, data: valueRow }));
                                                     }
                                                 });
                                             }
