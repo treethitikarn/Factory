@@ -89,7 +89,7 @@ app.post('/GetMaterialTypeList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -127,7 +127,7 @@ app.post('/Register', function (req, res) {
     var username = json.username;
     var password = bcrypt.hashSync(json.password);
     var isAdmin = json.isAdmin;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -165,7 +165,7 @@ app.post('/Login', function (req, res) {
     var json = req.body;
     var username = json.username;
     var password = json.password;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -206,7 +206,7 @@ app.get('/Logout', function (req, res) {
     var userId = req.userId;
     var token = req.token;
     var query = "UPDATE employee set authentoken = null where id = " + 1 + " and authentoken = '" + token + "'";
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -225,7 +225,7 @@ app.get('/Logout', function (req, res) {
 
 function isLogin(userId, token, callback) {
     var checkTokenQuery = "Select id from employee where id=" + userId + " and authentoken='" + token + "'";
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -254,7 +254,7 @@ app.post('/ChangePassword', function (req, res) {
     var renewPassword = json.renewPassword;
     var query = "update employee set password='" + bcrypt.hashSync(newPassword) + "' where username='" + username + "'";
     if (newPassword == renewPassword) {
-        let connection = mysql.createConnection({
+        var connection = mysql.createConnection({
             host: 'localhost',
             user: 'root',
             password: 'Password@1',
@@ -279,7 +279,7 @@ app.post('/GetProductList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -316,7 +316,7 @@ app.post('/GetProductListByCustomerId', function (req, res) {
     var userId = json.userId;
     var token = json.token;
     var customerId = json.customerId;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -364,7 +364,7 @@ app.post('/SearchProductByCustomerId', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -396,7 +396,7 @@ app.post('/GetProductById', function (req, res) {
     var userId = json.userId;
     var token = json.token;
     var productId = json.productId;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -441,7 +441,7 @@ app.post('/AddNewProduct', function (req, res) {
             }
             else {
                 if (req.files.uploadfile != null) {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -500,7 +500,7 @@ app.post('/AddNewProduct', function (req, res) {
                     });
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -570,7 +570,7 @@ app.post('/UpdateProduct', function (req, res) {
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                 }
                                 else {
-                                    let connection = mysql.createConnection({
+                                    var connection = mysql.createConnection({
                                         host: 'localhost',
                                         user: 'root',
                                         password: 'Password@1',
@@ -620,7 +620,7 @@ app.post('/UpdateProduct', function (req, res) {
                             });
                         }
                         else {
-                            let connection = mysql.createConnection({
+                            var connection = mysql.createConnection({
                                 host: 'localhost',
                                 user: 'root',
                                 password: 'Password@1',
@@ -669,7 +669,7 @@ app.post('/AddProductAmount', function (req, res) {
     var token = json.token;
     var productId = json.productId;
     var productAmount = json.productAmount;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -733,7 +733,7 @@ app.post('/SearchProduct', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -772,7 +772,7 @@ app.post('/DeleteProduct', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -817,7 +817,7 @@ app.post('/GetProductTypeList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -855,7 +855,7 @@ app.post('/GetProductTypeById', function (req, res) {
     var userId = json.userId;
     var token = json.token;
     var productTypeId = json.productTypeId;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -895,7 +895,7 @@ app.post('/AddNewProductType', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -947,7 +947,7 @@ app.post('/UpdateProductType', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -1003,7 +1003,7 @@ app.post('/DeleteProductType', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -1045,7 +1045,7 @@ app.post('/GetMaterialList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -1083,7 +1083,7 @@ app.post('/GetMaterialById', function (req, res) {
     var userId = json.userId;
     var token = json.token;
     var materialId = json.materialId;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -1125,7 +1125,7 @@ app.post('/AddNewMaterial', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -1181,7 +1181,7 @@ app.post('/UpdateMaterial', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -1239,7 +1239,7 @@ app.post('/SearchMaterial', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -1278,7 +1278,7 @@ app.post('/DeleteMaterial', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -1310,7 +1310,7 @@ app.post('/GetCustomerList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -1348,7 +1348,7 @@ app.post('/GetCustomerById', function (req, res) {
     var userId = json.userId;
     var token = json.token;
     var customerId = json.customerId;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -1402,7 +1402,7 @@ app.post('/AddNewCustomer', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -1489,7 +1489,7 @@ app.post('/UpdateCustomer', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -1592,7 +1592,7 @@ app.post('/SearchCustomer', function (req, res) {
             }
             else {
                 if ((typeof customerId !== 'undefined') && (typeof customerName !== 'undefined') && (typeof regionId !== 'undefined')) {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -1635,7 +1635,7 @@ app.post('/DeleteCustomer', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -1677,7 +1677,7 @@ app.post('/GetOrderList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -1715,7 +1715,7 @@ app.post('/GetOrderById', function (req, res) {
     var userId = json.userId;
     var token = json.token;
     var orderId = json.orderId;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -1759,7 +1759,7 @@ app.post('/AddNewOrder', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -1847,7 +1847,7 @@ app.post('/EditOrder', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -2062,7 +2062,7 @@ app.post('/DeleteOrder', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -2141,7 +2141,7 @@ app.post('/SearchOrder', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -2183,7 +2183,7 @@ app.post('/AddNewPurchase', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -2241,7 +2241,7 @@ app.post('/EditPurchase', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -2293,7 +2293,7 @@ app.post('/DeletePurchase', function (req, res) {
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    let connection = mysql.createConnection({
+                    var connection = mysql.createConnection({
                         host: 'localhost',
                         user: 'root',
                         password: 'Password@1',
@@ -2345,7 +2345,7 @@ app.post('/AddNewMaterialTransaction', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -2391,7 +2391,7 @@ app.post('/GetMaterialTransactionList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -2436,7 +2436,7 @@ app.post('/SearchMaterialTransaction', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -2463,7 +2463,7 @@ app.post('/GetProductTransactionList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -2508,7 +2508,7 @@ app.post('/SearchProductTransaction', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
@@ -2532,7 +2532,7 @@ app.post('/SearchProductTransaction', function (req, res) {
 });
 
 function addNewCustomerProductPrice(customerId, price, productId, callback) {
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
@@ -2592,7 +2592,7 @@ app.post('/UpdateCustomerProductPrice', function (req, res) {
                         res.send(JSON.stringify({ status: 0, errorMessage: 'CustomerProductPriceId, Price มีจำนวนไม่เท่ากัน' }));
                     }
                     else {
-                        let connection = mysql.createConnection({
+                        var connection = mysql.createConnection({
                             host: 'localhost',
                             user: 'root',
                             password: 'Password@1',
@@ -2635,7 +2635,7 @@ app.post('/DeleteCustomerProductPrice', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                let connection = mysql.createConnection({
+                var connection = mysql.createConnection({
                     host: 'localhost',
                     user: 'root',
                     password: 'Password@1',
