@@ -458,7 +458,7 @@ app.post('/AddNewProduct', function (req, res) {
                                         Cost,\
                                         EmployeeId,\
                                         InsertedDate) \
-                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW());";
+                                        values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW() + INTERVAL 7 HOUR);";
                                         console.log(query);
                     lock.writeLock(function (release) {
                         connection.query(query, function (error, rows) {
@@ -1800,7 +1800,7 @@ app.post('/AddNewOrder', function (req, res) {
                 var query = "Insert into `order` (customerId,\
                                         employeeId,\
                                         `datetime`) \
-                                        values(" + customerId + ", " + userId + ", NOW());";
+                                        values(" + customerId + ", " + userId + ", NOW()  + INTERVAL 7 HOUR);";
                 var lock = new ReadWriteLock();
                 lock.writeLock(function (release) {
                     connection.query(query, function (error, rows) {
@@ -1827,7 +1827,7 @@ app.post('/AddNewOrder', function (req, res) {
                                         var id = productId[i];
                                         var eachamount = amount[i]
                                         var eachpriceperpiece = priceperpiece[i];
-                                        insertQuery += "(" + rows['insertId'] + ", " + id + ", " + eachamount + ", " + eachpriceperpiece + ", " + userId + ", NOW())";
+                                        insertQuery += "(" + rows['insertId'] + ", " + id + ", " + eachamount + ", " + eachpriceperpiece + ", " + userId + ", NOW() + INTERVAL 7 HOUR)";
                                         updateQuery += "when " + id + " then `amount` - " + eachamount + " ";
                                         if (i != productId.length - 1) insertQuery += ",";
                                         else updateQuery += "else `amount` end";
@@ -1951,7 +1951,7 @@ app.post('/EditOrder', function (req, res) {
                                                                 var eachproductId = productId[i];
                                                                 var eachpriceperpiece = priceperpiece[i];
                                                                 var eachamount = amount[i];
-                                                                valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now(), ' + eachproductId + ')';
+                                                                valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now()  + INTERVAL 7 HOUR, ' + eachproductId + ')';
                                                                 minusQuery += "when " + eachproductId + " then amount - " + eachamount + " ";
                                                                 deleteQuery += "id <> " + eachorderDetailId + " ";
                                                                 if (i != orderDetailId.length - 1) {
@@ -2037,7 +2037,7 @@ app.post('/EditOrder', function (req, res) {
                                                         var eachproductId = productId[i];
                                                         var eachpriceperpiece = priceperpiece[i];
                                                         var eachamount = amount[i];
-                                                        valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now(), ' + eachproductId + ')';
+                                                        valuesquery += '(' + eachorderDetailId + ', ' + orderId + ', ' + eachpriceperpiece + ', ' + eachamount + ', ' + userId + ', now()  + INTERVAL 7 HOUR, ' + eachproductId + ')';
                                                         minusQuery += "when " + eachproductId + " then amount - " + eachamount + " ";
                                                         if (i != orderDetailId.length - 1) {
                                                             valuesquery += ',';
