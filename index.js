@@ -458,10 +458,12 @@ app.post('/AddNewProduct', function (req, res) {
                                         EmployeeId,\
                                         InsertedDate) \
                                         values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW());";
+                                        console.log(query);
                     lock.writeLock(function (release) {
                         connection.query(query, function (error, rows) {
                             if (error) {
                                 connection.end();
+                                console.log(error);
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                             }
                             else {
@@ -911,21 +913,26 @@ app.post('/AddNewProductType', function (req, res) {
                                         EmployeeId,\
                                         `datetime`) \
                                         values('" + productTypeName + "'," + userId + ", NOW());";
+                                        console.log(query);
                 var lock = new ReadWriteLock();
                 lock.writeLock(function (release) {
                     connection.query(query, function (error, rows) {
                         if (error) {
                             connection.end();
+                            console.log(error);
                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
                         }
                         else {
                             var selectQuery = "select * from producttype where id = " + rows['insertId'];
+                            console.log(selectQuery);
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
                                 if (error) {
+                                    console.log(error);
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถโชว์ประเภทสินค้าได้' }));
                                 }
                                 else {
+                                    console.log(valueRow[0]);
                                     res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
                                 }
                             });
