@@ -491,9 +491,11 @@ app.post('/AddNewProduct', function (req, res) {
                                                 connection.query(selectQuery, function (error, valueRow) {
                                                     connection.end();
                                                     if (error) {
+                                                        console.log("TT");
                                                         res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                                     }
                                                     else {
+                                                        console.log(valueRow[0]);
                                                         res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
                                                     }
                                                 });
