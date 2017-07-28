@@ -9,7 +9,8 @@ var fs = require('fs');
 // var folderName = "/upload/";
 // var uploadFolder = __dirname.replace(/\\/gi, '/') + folderName;
 var folderName = "/ProductImg/";
-var uploadFolder = "../../var/www/html" + folderName;
+var previousPath = "../../var/www/html";
+var uploadFolder = previousPath + folderName;
 var ReadWriteLock = require('rwlock');
 var upload = require('express-fileupload');
 var queryGetProductList = 'SELECT * from product order by id';
@@ -373,7 +374,7 @@ app.post('/SearchProductByCustomerId', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select prod.id as id, prod.name as name, prod.producttypeid as ProductTypeId, prod.amount as amount, ifnull(cust.price,0) price\
+                var query = "select prod.*, ifnull(cust.price,0) price\
                 from (select * from product p where\
                 (('" + productId + "' is null or '" + productId + "' = '') or p.id = '" + productId + "')\
                 and (('" + productName + "' is null or '" + productName + "' = '') or p.name like '%" + productName + "%')\
@@ -477,7 +478,7 @@ app.post('/AddNewProduct', function (req, res) {
                                         res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                                     }
                                     else {
-                                        file.mv(absolutepath, function (err) {
+                                        file.mv(uploadFolder + filename, function (err) {
                                             if (err) {
                                                 connection.end();
                                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
@@ -544,7 +545,6 @@ app.post('/AddNewProduct', function (req, res) {
 });
 
 app.post('/UpdateProduct', function (req, res) {
-    console.log("UpdateProduct");
     var json = req.body;
     var userId = json.userId;
     var isAdmin = json.isAdmin;
@@ -553,35 +553,24 @@ app.post('/UpdateProduct', function (req, res) {
     var productName = json.productName;
     var productCost = json.productCost;
     var productTypeId = json.productTypeId;
-    console.log(productId);
-    console.log(productName);
-    console.log(productCost);
-    console.log(productTypeId);
-    console.log(isAdmin);
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
-            console.log("login");
             if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
-                    console.log("y");
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
-                    console.log("z");
                     var lock = new ReadWriteLock();
                     lock.writeLock(function (release) {
                         if (req.files.uploadfile != null) {
-                            console.log("1");
                             var file = req.files.uploadfile,
                                 filename = productId + "_" + file.name;
                             if (!fs.existsSync(uploadFolder)) {
-                                console.log("up");
                                 fs.mkdirSync(uploadFolder);
                             }
                             file.mv(uploadFolder + filename, function (err) {
                                 if (err) {
-                                    console.log(err);
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                 }
                                 else {
@@ -595,12 +584,11 @@ app.post('/UpdateProduct', function (req, res) {
                                     var oldImageUrl = "";
                                     connection.query(getImageUrlQuery, function (error, rows) {
                                         if (error) {
-                                            console.log(error);
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                         }
                                         else {
                                             oldImageUrl = rows[0].ImageUrl;
-                                            var filePath = oldImageUrl;
+                                            var filePath = previousPath + oldImageUrl;
                                             if (fs.existsSync(filePath)) {
                                                 fs.unlinkSync(filePath);
                                             }
@@ -617,7 +605,6 @@ app.post('/UpdateProduct', function (req, res) {
                                     connection.query(query, function (error, rows) {
                                         if (error) {
                                             connection.end();
-                                            console.log(error);
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                                         }
                                         else {
@@ -625,7 +612,6 @@ app.post('/UpdateProduct', function (req, res) {
                                             connection.query(selectQuery, function (error, valueRow) {
                                                 connection.end();
                                                 if (error) {
-                                                    console.log(error);
                                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                                 }
                                                 else {
@@ -638,7 +624,6 @@ app.post('/UpdateProduct', function (req, res) {
                             });
                         }
                         else {
-                            console.log("2");
                             var connection = mysql.createConnection({
                                 host: 'localhost',
                                 user: 'root',
@@ -655,7 +640,6 @@ app.post('/UpdateProduct', function (req, res) {
                             connection.query(query, function (error, rows) {
                                 if (error) {
                                     connection.end();
-                                    console.log(error);
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                                 }
                                 else {
@@ -663,7 +647,6 @@ app.post('/UpdateProduct', function (req, res) {
                                     connection.query(selectQuery, function (error, valueRow) {
                                         connection.end();
                                         if (error) {
-                                            console.log(error);
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                         }
                                         else {
@@ -809,8 +792,10 @@ app.post('/DeleteProduct', function (req, res) {
                             }
                             else {
                                 oldImageUrl = rows[0].ImageUrl;
-                                var filePath = oldImageUrl;
-                                fs.unlinkSync(filePath);
+                                var filePath = previousPath + oldImageUrl;
+                                if (fs.existsSync(filePath)) {
+                                    fs.unlinkSync(filePath);
+                                }
                             }
                         });
                         var query = "delete from product where id = " + productId;
@@ -922,7 +907,7 @@ app.post('/AddNewProductType', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "Insert into productType (Name,\
+                var query = "Insert into producttype (Name,\
                                         EmployeeId,\
                                         `datetime`) \
                                         values('" + productTypeName + "'," + userId + ", NOW());";
@@ -938,7 +923,7 @@ app.post('/AddNewProductType', function (req, res) {
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
                                 if (error) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
+                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถโชว์ประเภทสินค้าได้' }));
                                 }
                                 else {
                                     res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
@@ -1045,7 +1030,6 @@ app.post('/DeleteProductType', function (req, res) {
                                         res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบประเภทสินค้าได้' }));
                                     }
                                     else {
-                                        console.log(updateQuery);
                                         res.send(JSON.stringify({ status: 1 }));
                                     }
                                 });
@@ -2189,7 +2173,7 @@ app.post('/SearchOrder', function (req, res) {
                 from `order` o join customer c on o.customerid = c.id \
                 where (('" + orderId + "' is null or '" + orderId + "' = '') or o.id = '" + orderId + "')\
                 and (('" + customerName + "' is null or '" + customerName + "' = '') or c.name like '%" + customerName + "%')\
-                and date(o.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s'))\
+                and (('" + transactionDate + "' is null or '" + transactionDate + "' = '') or date(o.`datetime`) = date(date_format('" + transactionDate + "', '%y-%m-%d %h:%m:%s')))\
                 and (('" + regionId + "' is null or '" + regionId + "' = '') or c.regionId = '" + regionId + "')";
                 connection.query(query, function (error, rows) {
                     connection.end();
