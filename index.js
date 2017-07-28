@@ -7,7 +7,7 @@ var fs = require('fs');
 var folderName = "/upload/";
 var uploadFolder = __dirname.replace(/\\/gi, '/') + folderName;
 var ReadWriteLock = require('rwlock');
-
+var upload = require('express-fileupload');
 var queryGetProductList = 'SELECT * from product order by id';
 var queryGetProductById = 'Select * from product where id={0}';
 
@@ -16,7 +16,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-// app.use(upload());
+app.use(upload());
 // Add headers
 app.use(function (req, res, next) {
 
