@@ -53,7 +53,7 @@ app.post('/GetRegionList', function (req, res) {
     var json = req.body;
     var userId = json.userId;
     var token = json.token;
-    let connection = mysql.createConnection({
+    var connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: 'Password@1',
