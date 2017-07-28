@@ -2386,7 +2386,7 @@ app.post('/AddNewMaterialTransaction', function (req, res) {
                 var insertQuery = 'insert into materialtransaction (materialId,acquire,`use`,balance,`datetime`,employeeid) values ';
                 var updateQuery = "update material m1 join material m2 on m1.id = m2.id set m1.amount = case ";
                 for (var i = 0; i < materialId.length; i++) {
-                    insertQuery += '(' + materialId[i] + ', ' + acquire[i] + ', ' + use[i] + ', (select amount from material where id = ' + materialId[i] + ' limit 1) - ' + use[i] + ' + ' + acquire[i] + ', NOW(), ' + userId + ') ';
+                    insertQuery += '(' + materialId[i] + ', ' + acquire[i] + ', ' + use[i] + ', (select amount from material where id = ' + materialId[i] + ' limit 1) - ' + use[i] + ' + ' + acquire[i] + ', NOW()  + INTERVAL 7 HOUR, ' + userId + ') ';
                     updateQuery += 'when m2.id = ' + materialId[i] + ' then m2.amount - ' + use[i] + " + " + acquire[i] + ' ';
                     if (i != materialId.length - 1) {
                         insertQuery += ', ';
