@@ -2,7 +2,6 @@ var app = require('express')();
 var mysql = require('mysql');
 var bodyParser = require('body-parser');
 var bcrypt = require('bcrypt-nodejs');
-var upload = require('express-fileupload');
 var path = require('path');
 var fs = require('fs');
 var folderName = "/upload/";
@@ -17,7 +16,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-app.use(upload());
 // Add headers
 app.use(function (req, res, next) {
 
