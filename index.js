@@ -8,8 +8,9 @@ var fs = require('fs');
 // var folderName = "/var/www/html/ProductImg/";
 // var folderName = "/upload/";
 // var uploadFolder = __dirname.replace(/\\/gi, '/') + folderName;
+// /var/www/html/FactoryUI/ProductImg/
 var folderName = "/ProductImg/";
-var previousPath = "../../var/www/html";
+var previousPath = "/var/www/html/FactoryUI";
 var uploadFolder = previousPath + folderName;
 var ReadWriteLock = require('rwlock');
 var upload = require('express-fileupload');
