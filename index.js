@@ -16,6 +16,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+// app.use(upload());
 // Add headers
 app.use(function (req, res, next) {
 
@@ -368,13 +369,13 @@ app.post('/SearchProductByCustomerId', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "select p.id as id, p.name as name, p.producttypeid as ProductTypeId, p.amount as amount\
-                from product p join customerproductprice cp on p.id = cp.productId\
-                where (('" + productId + "' is null or '" + productId + "' = '') or p.id = '" + productId + "')\
+                var query = "select prod.id as id, prod.name as name, prod.producttypeid as ProductTypeId, prod.amount as amount, ifnull(cust.price,0) price\
+                from (select * from product p where\
+                (('" + productId + "' is null or '" + productId + "' = '') or p.id = '" + productId + "')\
                 and (('" + productName + "' is null or '" + productName + "' = '') or p.name like '%" + productName + "%')\
-                and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or p.producttypeid = '" + productTypeId + "')\
-                and cp.customerId = " + customerId;
-                console.log(query);
+                and (('" + productTypeId + "' is null or '" + productTypeId + "' = '') or p.producttypeid = '" + productTypeId + "')) prod\
+                left join (select productid, price from customerproductprice where \
+                customerId = " + customerId + ") cust on prod.id = cust.productid order by prod.id";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -539,6 +540,7 @@ app.post('/AddNewProduct', function (req, res) {
 });
 
 app.post('/UpdateProduct', function (req, res) {
+    console.log("UpdateProduct");
     var json = req.body;
     var userId = json.userId;
     var isAdmin = json.isAdmin;
@@ -547,24 +549,35 @@ app.post('/UpdateProduct', function (req, res) {
     var productName = json.productName;
     var productCost = json.productCost;
     var productTypeId = json.productTypeId;
+    console.log(productId);
+    console.log(productName);
+    console.log(productCost);
+    console.log(productTypeId);
+    console.log(isAdmin);
     if (isAdmin == 1) {
         isLogin(userId, token, function (error, ans) {
+            console.log("login");
             if (error) res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             else {
                 if (!ans) {
+                    console.log("y");
                     res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
                 }
                 else {
+                    console.log("z");
                     var lock = new ReadWriteLock();
                     lock.writeLock(function (release) {
                         if (req.files.uploadfile != null) {
+                            console.log("1");
                             var file = req.files.uploadfile,
                                 filename = productId + "_" + file.name;
                             if (!fs.existsSync(uploadFolder)) {
+                                console.log("up");
                                 fs.mkdirSync(uploadFolder);
                             }
                             file.mv(uploadFolder + filename, function (err) {
                                 if (err) {
+                                    console.log(err);
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                 }
                                 else {
@@ -578,6 +591,7 @@ app.post('/UpdateProduct', function (req, res) {
                                     var oldImageUrl = "";
                                     connection.query(getImageUrlQuery, function (error, rows) {
                                         if (error) {
+                                            console.log(error);
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดข้อผิดพลาดระหว่างอัพโหลดไฟล์' }));
                                         }
                                         else {
@@ -599,6 +613,7 @@ app.post('/UpdateProduct', function (req, res) {
                                     connection.query(query, function (error, rows) {
                                         if (error) {
                                             connection.end();
+                                            console.log(error);
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                                         }
                                         else {
@@ -606,6 +621,7 @@ app.post('/UpdateProduct', function (req, res) {
                                             connection.query(selectQuery, function (error, valueRow) {
                                                 connection.end();
                                                 if (error) {
+                                                    console.log(error);
                                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                                 }
                                                 else {
@@ -618,6 +634,7 @@ app.post('/UpdateProduct', function (req, res) {
                             });
                         }
                         else {
+                            console.log("2");
                             var connection = mysql.createConnection({
                                 host: 'localhost',
                                 user: 'root',
@@ -634,6 +651,7 @@ app.post('/UpdateProduct', function (req, res) {
                             connection.query(query, function (error, rows) {
                                 if (error) {
                                     connection.end();
+                                    console.log(error);
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                                 }
                                 else {
@@ -641,6 +659,7 @@ app.post('/UpdateProduct', function (req, res) {
                                     connection.query(selectQuery, function (error, valueRow) {
                                         connection.end();
                                         if (error) {
+                                            console.log(error);
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                         }
                                         else {
@@ -1518,7 +1537,24 @@ app.post('/UpdateCustomer', function (req, res) {
                                 if ((typeof price == 'undefined')
                                     || (typeof productId == 'undefined')
                                     || (typeof customerProductPriceId == 'undefined')) {
-                                    res.send(JSON.stringify({ status: 0, errorMessage: 'ไม่มี ProductId หรือ Price หรือ customerProductPriceId' }));
+                                    var select = "select * from customer where id = " + customerId;
+                                    var deleteQ = "delete from customerproductprice where customerid = " + customerId;
+                                    connection.query(deleteQ, function (error, ans) {
+                                        if (error) {
+                                            res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบราคาสินค้าของลูกค้าได้' }));
+                                        }
+                                        else {
+                                            connection.query(select, function (error, valueRow) {
+                                                connection.end();
+                                                if (error) {
+                                                    res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแสดงรายละเอียดลูกค้าได้' }));
+                                                }
+                                                else {
+                                                    res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
+                                                }
+                                            });
+                                        }
+                                    });
                                 }
                                 else {
                                     if ((price.length != productId.length) || (price.length != customerProductPriceId.length) || (productId.length != customerProductPriceId.length)) {
