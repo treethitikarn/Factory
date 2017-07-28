@@ -5,8 +5,11 @@ var bcrypt = require('bcrypt-nodejs');
 var path = require('path');
 var fs = require('fs');
 // var folderName = "/upload/";
-var folderName = "/var/www/html/ProductImg/";
-var uploadFolder = __dirname.replace(/\\/gi, '/') + folderName;
+// var folderName = "/var/www/html/ProductImg/";
+// var folderName = "/upload/";
+// var uploadFolder = __dirname.replace(/\\/gi, '/') + folderName;
+var folderName = "/ProductImg/";
+var uploadFolder = "../../var/www/html" + folderName;
 var ReadWriteLock = require('rwlock');
 var upload = require('express-fileupload');
 var queryGetProductList = 'SELECT * from product order by id';
@@ -463,7 +466,7 @@ app.post('/AddNewProduct', function (req, res) {
                             else {
                                 var file = req.files.uploadfile,
                                     filename = rows['insertId'] + '_' + file.name;
-                                var absolutepath = uploadFolder + filename;
+                                var absolutepath = folderName + filename;
                                 if (!fs.existsSync(uploadFolder)) {
                                     fs.mkdirSync(uploadFolder);
                                 }
@@ -608,7 +611,7 @@ app.post('/UpdateProduct', function (req, res) {
                                         ProductTypeId = " + productTypeId + ",\
                                         Cost = " + productCost + ",\
                                         EmployeeId = " + userId + ",\
-                                        ImageUrl = '" + uploadFolder + filename + "',\
+                                        ImageUrl = '" + folderName + filename + "',\
                                         InsertedDate = NOW() \
                                         where id = " + productId;
                                     connection.query(query, function (error, rows) {
