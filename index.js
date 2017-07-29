@@ -459,12 +459,10 @@ app.post('/AddNewProduct', function (req, res) {
                                         EmployeeId,\
                                         InsertedDate) \
                                         values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW() + INTERVAL 7 HOUR);";
-                    console.log(query);
                     lock.writeLock(function (release) {
                         connection.query(query, function (error, rows) {
                             if (error) {
                                 connection.end();
-                                console.log(error);
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มสินค้าใหม่ได้' }));
                             }
                             else {
@@ -491,11 +489,9 @@ app.post('/AddNewProduct', function (req, res) {
                                                 connection.query(selectQuery, function (error, valueRow) {
                                                     connection.end();
                                                     if (error) {
-                                                        console.log("TT");
                                                         res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถนำข้อมูลสินค้าใหม่ออกมาได้' }));
                                                     }
                                                     else {
-                                                        console.log(valueRow[0]);
                                                         res.send(JSON.stringify({ status: 1, data: valueRow }));
                                                     }
                                                 });
@@ -916,26 +912,21 @@ app.post('/AddNewProductType', function (req, res) {
                                         EmployeeId,\
                                         `datetime`) \
                                         values('" + productTypeName + "'," + userId + ", NOW());";
-                console.log(query);
                 var lock = new ReadWriteLock();
                 lock.writeLock(function (release) {
                     connection.query(query, function (error, rows) {
                         if (error) {
                             connection.end();
-                            console.log(error);
                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถเพิ่มประเภทสินค้าได้' }));
                         }
                         else {
                             var selectQuery = "select * from producttype where id = " + rows['insertId'];
-                            console.log(selectQuery);
                             connection.query(selectQuery, function (error, valueRow) {
                                 connection.end();
                                 if (error) {
-                                    console.log(error);
                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถโชว์ประเภทสินค้าได้' }));
                                 }
                                 else {
-                                    console.log(valueRow[0]);
                                     res.send(JSON.stringify({ status: 1, data: valueRow[0] }));
                                 }
                             });
@@ -1966,7 +1957,6 @@ app.post('/EditOrder', function (req, res) {
                                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
                                                         }
                                                         else {
-                                                            console.log('1: ' + updateQuery);
                                                             for (var i = 0; i < orderDetailId.length; i++) {
                                                                 var eachorderDetailId = orderDetailId[i];
                                                                 var eachproductId = productId[i];
@@ -1983,14 +1973,12 @@ app.post('/EditOrder', function (req, res) {
                                                             minusQuery += "else amount end";
                                                             var updateNewProductQuery = insertquery + valuesquery + duplicatequery;
                                                             connection.query(minusQuery, function (error, valueRow) {
-                                                                console.log('2: ' + minusQuery);
                                                                 if (error) {
                                                                     connection.end();
                                                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
                                                                 }
                                                                 else {
                                                                     connection.query(deleteQuery, function (error, valueRow) {
-                                                                        console.log('3: ' + deleteQuery);
                                                                         if (error) {
                                                                             connection.end();
                                                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
@@ -1998,7 +1986,6 @@ app.post('/EditOrder', function (req, res) {
                                                                         else {
                                                                             connection.query(updateNewProductQuery, function (error, valueRow) {
                                                                                 connection.end();
-                                                                                console.log('4: ' + updateNewProductQuery);
                                                                                 if (error) {
                                                                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
                                                                                 }
