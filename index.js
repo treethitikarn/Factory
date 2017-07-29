@@ -1946,6 +1946,7 @@ app.post('/EditOrder', function (req, res) {
                                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
                                                         }
                                                         else {
+                                                            console.log('1: ' + updateQuery);
                                                             for (var i = 0; i < orderDetailId.length; i++) {
                                                                 var eachorderDetailId = orderDetailId[i];
                                                                 var eachproductId = productId[i];
@@ -1962,12 +1963,14 @@ app.post('/EditOrder', function (req, res) {
                                                             minusQuery += "else amount end";
                                                             var updateNewProductQuery = insertquery + valuesquery + duplicatequery;
                                                             connection.query(minusQuery, function (error, valueRow) {
+                                                                console.log('2: ' + minusQuery);
                                                                 if (error) {
                                                                     connection.end();
                                                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขจำนวนสินค้าได้' }));
                                                                 }
                                                                 else {
                                                                     connection.query(deleteQuery, function (error, valueRow) {
+                                                                        console.log('3: ' + deleteQuery);
                                                                         if (error) {
                                                                             connection.end();
                                                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
@@ -1975,6 +1978,7 @@ app.post('/EditOrder', function (req, res) {
                                                                         else {
                                                                             connection.query(updateNewProductQuery, function (error, valueRow) {
                                                                                 connection.end();
+                                                                                console.log('4: ' + updateNewProductQuery);
                                                                                 if (error) {
                                                                                     res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
                                                                                 }
