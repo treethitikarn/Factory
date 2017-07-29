@@ -459,7 +459,7 @@ app.post('/AddNewProduct', function (req, res) {
                                         EmployeeId,\
                                         InsertedDate) \
                                         values('" + productName + "', " + productTypeId + "," + productAmount + "," + productCost + "," + userId + ", NOW() + INTERVAL 7 HOUR);";
-                                        console.log(query);
+                    console.log(query);
                     lock.writeLock(function (release) {
                         connection.query(query, function (error, rows) {
                             if (error) {
@@ -916,7 +916,7 @@ app.post('/AddNewProductType', function (req, res) {
                                         EmployeeId,\
                                         `datetime`) \
                                         values('" + productTypeName + "'," + userId + ", NOW());";
-                                        console.log(query);
+                console.log(query);
                 var lock = new ReadWriteLock();
                 lock.writeLock(function (release) {
                     connection.query(query, function (error, rows) {
@@ -1910,23 +1910,42 @@ app.post('/EditOrder', function (req, res) {
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส เกิดความผิดพลาดกับเดต้าเบส' }));
                                         }
                                         else {
-                                            // if ((typeof orderDetailId == 'undefined')
-                                            //     || (typeof productId == 'undefined')
-                                            //     || (typeof priceperpiece == 'undefined')
-                                            //     || (typeof amount == 'undefined')) {
-                                            //     var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
-                                            //     connection.query(deleteOrderdetails, function (error, rows) {
-                                            //         console.log("1 " + orderDetailId + " 2 " + productId + " 3 " + priceperpiece + " 4 " + amount);
-                                            //         connection.end();
-                                            //         if (error) {
-                                            //             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
-                                            //         }
-                                            //         else {
-                                            //             res.send(JSON.stringify({ status: 1 }));
-                                            //         }
-                                            //     });
-                                            // }
-                                            // else {
+                                            if ((typeof orderDetailId == 'undefined')
+                                                || (typeof productId == 'undefined')
+                                                || (typeof priceperpiece == 'undefined')
+                                                || (typeof amount == 'undefined')) {
+                                                var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
+                                                var selectExist = 'select * from orderdetails where orderid = ' + orderId;
+                                                connection.query(selectExist, function (error, rows) {
+                                                    if (error) {
+                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่ดึงรายการสั่งซื้อได้' }));
+                                                    }
+                                                    else {
+                                                        var updatePreviousProductAmount = 'update product set amount = case id ';
+                                                        for (var i = 0; i < rows.length; i++) {
+                                                            updatePreviousProductAmount += "when " + rows[i].productid + " then amount + " + rows[i].amount + " ";
+                                                        }
+                                                        updatePreviousProductAmount += "else amount end";
+                                                        connection.query(updatePreviousProductAmount, function (error, rows) {
+                                                            if (error) {
+                                                                res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
+                                                            }
+                                                            else {
+                                                                connection.query(deleteOrderdetails, function (error, rows) {
+                                                                    connection.end();
+                                                                    if (error) {
+                                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
+                                                                    }
+                                                                    else {
+                                                                        res.send(JSON.stringify({ status: 1 }));
+                                                                    }
+                                                                });
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                            else {
                                                 var q = 'if (not exist(select id from orderdetails where id = ' + '))';
                                                 var insertquery = 'INSERT INTO orderdetails (id, orderid, priceperpiece, amount, employeeid, datetime, productid) ';
                                                 var valuesquery = 'Values ';
@@ -1995,7 +2014,7 @@ app.post('/EditOrder', function (req, res) {
                                                     });
 
                                                 }
-                                            // }
+                                            }
                                         }
                                     });
                                 }
