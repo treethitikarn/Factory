@@ -1910,23 +1910,23 @@ app.post('/EditOrder', function (req, res) {
                                             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส เกิดความผิดพลาดกับเดต้าเบส' }));
                                         }
                                         else {
-                                            if ((typeof orderDetailId == 'undefined')
-                                                || (typeof productId == 'undefined')
-                                                || (typeof priceperpiece == 'undefined')
-                                                || (typeof amount == 'undefined')) {
-                                                var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
-                                                connection.query(deleteOrderdetails, function (error, rows) {
-                                                    console.log("1 " + orderDetailId + " 2 " + productId + " 3 " + priceperpiece + " 4 " + amount);
-                                                    connection.end();
-                                                    if (error) {
-                                                        res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
-                                                    }
-                                                    else {
-                                                        res.send(JSON.stringify({ status: 1 }));
-                                                    }
-                                                });
-                                            }
-                                            else {
+                                            // if ((typeof orderDetailId == 'undefined')
+                                            //     || (typeof productId == 'undefined')
+                                            //     || (typeof priceperpiece == 'undefined')
+                                            //     || (typeof amount == 'undefined')) {
+                                            //     var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
+                                            //     connection.query(deleteOrderdetails, function (error, rows) {
+                                            //         console.log("1 " + orderDetailId + " 2 " + productId + " 3 " + priceperpiece + " 4 " + amount);
+                                            //         connection.end();
+                                            //         if (error) {
+                                            //             res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
+                                            //         }
+                                            //         else {
+                                            //             res.send(JSON.stringify({ status: 1 }));
+                                            //         }
+                                            //     });
+                                            // }
+                                            // else {
                                                 var q = 'if (not exist(select id from orderdetails where id = ' + '))';
                                                 var insertquery = 'INSERT INTO orderdetails (id, orderid, priceperpiece, amount, employeeid, datetime, productid) ';
                                                 var valuesquery = 'Values ';
@@ -1995,7 +1995,7 @@ app.post('/EditOrder', function (req, res) {
                                                     });
 
                                                 }
-                                            }
+                                            // }
                                         }
                                     });
                                 }
