@@ -1916,6 +1916,7 @@ app.post('/EditOrder', function (req, res) {
                                                 || (typeof amount == 'undefined')) {
                                                 var deleteOrderdetails = 'delete from orderdetails where orderid = ' + orderId;
                                                 connection.query(deleteOrderdetails, function (error, rows) {
+                                                    console.log("=============undefined=============");
                                                     connection.end();
                                                     if (error) {
                                                         res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถลบรายการสั่งซื้อได้' }));
