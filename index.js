@@ -4,17 +4,12 @@ var bodyParser = require('body-parser');
 var bcrypt = require('bcrypt-nodejs');
 var path = require('path');
 var fs = require('fs');
-// var folderName = "/upload/";
-// var folderName = "/var/www/html/ProductImg/";
-// var folderName = "/upload/";
-// var uploadFolder = __dirname.replace(/\\/gi, '/') + folderName;
-// /var/www/html/FactoryUI/ProductImg/
 var folderName = "/ProductImg/";
 var previousPath = "/var/www/html/FactoryUI";
 var uploadFolder = previousPath + folderName;
 var ReadWriteLock = require('rwlock');
 var upload = require('express-fileupload');
-var queryGetProductList = 'SELECT * from product order by id';
+var queryGetProductList = 'SELECT * from product where isDeleted is null order by id';
 var queryGetProductById = 'Select * from product where id={0}';
 
 var port = process.env.PORT || 7777;
@@ -799,7 +794,7 @@ app.post('/DeleteProduct', function (req, res) {
                                 }
                             }
                         });
-                        var query = "delete from product where id = " + productId;
+                        var query = "update product set isDeleted = 1 where id = " + productId;
                         connection.query(query, function (error, rows) {
                             connection.end();
                             if (error) {
@@ -837,7 +832,7 @@ app.post('/GetProductTypeList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                var query = "select * from producttype";
+                var query = "select * from producttype where isDeleted is null";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -973,7 +968,7 @@ app.post('/UpdateProductType', function (req, res) {
                                 res.send(JSON.stringify({ status: 0, errorMessage: 'เกิดความผิดพลาดกับเดต้าเบส ไม่สามารถแก้ไขประเภทสินค้าได้' }));
                             }
                             else {
-                                var selectQuery = "select * from producttype where id = " + productTypeId;
+                                var selectQuery = "update producttype set isDeleted = 1 where id = " + productTypeId;
                                 connection.query(selectQuery, function (error, valueRow) {
                                     connection.end();
                                     if (error) {
@@ -1016,7 +1011,7 @@ app.post('/DeleteProductType', function (req, res) {
                         password: 'Password@1',
                         database: 'factory'
                     });
-                    var query = "delete from producttype where id = " + productTypeId;
+                    var query = "update producttype set isDeleted = 1 where id = " + productTypeId;
                     var lock = new ReadWriteLock();
                     lock.writeLock(function (release) {
                         connection.query(query, function (error, rows) {
@@ -1064,7 +1059,7 @@ app.post('/GetMaterialList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                var query = "select * from material";
+                var query = "select * from material where isDeleted is null";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1290,7 +1285,7 @@ app.post('/DeleteMaterial', function (req, res) {
                         password: 'Password@1',
                         database: 'factory'
                     });
-                    var query = "delete from material where id = " + materialId;
+                    var query = "update material set isDeleted = 1 where id = " + materialId;
                     var lock = new ReadWriteLock();
                     lock.writeLock(function (release) {
                         connection.query(query, function (error, rows) {
@@ -1329,7 +1324,7 @@ app.post('/GetCustomerList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                var query = "select * from customer";
+                var query = "select * from customer where isDeleted is null";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -1664,8 +1659,8 @@ app.post('/DeleteCustomer', function (req, res) {
                         password: 'Password@1',
                         database: 'factory'
                     });
-                    var query = "delete from customer where id = " + customerId;
-                    var deleteCustProd = "delete from customerproductprice where customerid = " + customerId;
+                    var query = "update customer set isDeleted = 1 where id = " + customerId;
+                    var deleteCustProd = "update customerproductprice set isDeleted = 1 where customerid = " + customerId;
                     var lock = new ReadWriteLock();
                     lock.writeLock(function (release) {
                         connection.query(query, function (error, rows) {
@@ -1713,7 +1708,7 @@ app.post('/GetOrderList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                var query = "select o.id id, o.`datetime` datetime,c.credit credit, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id left join orderdetails od on o.id = od.orderid group by o.id order by datetime";
+                var query = "select o.id id, o.`datetime` datetime,c.credit credit, c.name name, sum(od.amount*od.priceperpiece) price from `order` o join customer c on o.customerid = c.id left join orderdetails od on o.id = od.orderid where o.isDeleted is null group by o.id order by datetime";
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -2112,7 +2107,7 @@ app.post('/DeleteOrder', function (req, res) {
                         database: 'factory'
                     });
                     var getPurchase = "select productid id, `amount` from orderdetails where orderid = " + orderId;
-                    var query = "delete o.*, od.* from `order` as o left join orderdetails as od on o.id = od.orderid where o.id = " + orderId + " or od.orderid = " + orderId;
+                    var query = "update `order` as o left join orderdetails as od on o.id = od.orderid set o.isDeleted = 1, od.isDeleted = 1 where o.id = " + orderId + " or od.orderid = " + orderId;
                     var updateQuery = "update product set `amount` = case id ";
                     var lock = new ReadWriteLock();
                     lock.writeLock(function (release) {
@@ -2343,7 +2338,7 @@ app.post('/DeletePurchase', function (req, res) {
                         database: 'factory'
                     });
                     var updateQuery = "update product set `amount` = `amount` + (select `amount` from orderdetails where id = " + orderdetailsId + ") where id = (select productid from orderdetails where id = " + orderdetailsId + ")";
-                    var query = "delete from orderdetails where id = " + orderdetailsId;
+                    var query = "update orderdetails set isDeleted = 1 where id = " + orderdetailsId;
                     var lock = new ReadWriteLock();
                     lock.writeLock(function (release) {
                         connection.query(updateQuery, function (error, rows) {
@@ -2447,7 +2442,7 @@ app.post('/GetMaterialTransactionList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                var query = 'select * from materialtransaction';
+                var query = 'select * from materialtransaction where isDeleted is null';
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -2519,7 +2514,7 @@ app.post('/GetProductTransactionList', function (req, res) {
                 res.send(JSON.stringify({ status: 0, errorMessage: 'กรุณาเข้าสู่ระบบ' }));
             }
             else {
-                var query = 'select * from producttransaction order by transactiondate';
+                var query = 'select * from producttransaction where isDeleted is null order by transactiondate';
                 connection.query(query, function (error, rows) {
                     connection.end();
                     if (error) {
@@ -2684,7 +2679,7 @@ app.post('/DeleteCustomerProductPrice', function (req, res) {
                     password: 'Password@1',
                     database: 'factory'
                 });
-                var query = "delete from `customerproductprice` where id = " + customerProductPriceId + ";";
+                var query = "update `customerproductprice` set isDeleted = 1 where id = " + customerProductPriceId + ";";
                 var lock = new ReadWriteLock();
                 lock.writeLock(function (release) {
                     connection.query(query, function (error, rows) {
